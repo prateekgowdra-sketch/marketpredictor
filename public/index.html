@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Market Predictor</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">MP</span>
+        <div>
+          <h1>Market Predictor</h1>
+          <p>Personal opportunity radar</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="active" type="button">Radar</button>
+        <button type="button">Research</button>
+        <button type="button">Signals</button>
+        <button type="button">Models</button>
+      </nav>
+      <section class="control-panel">
+        <label>
+          Minimum score
+          <input id="scoreFilter" type="range" min="0" max="90" value="40" />
+          <span id="scoreValue">40</span>
+        </label>
+        <label>
+          Priority
+          <select id="priorityFilter">
+            <option value="all">All</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Watch">Watch</option>
+          </select>
+        </label>
+      </section>
+    </aside>
+
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Streaming research engine</p>
+          <h2 id="marketTone">Loading market state</h2>
+        </div>
+        <div class="status">
+          <span class="pulse"></span>
+          <span id="lastUpdated">Connecting</span>
+        </div>
+      </header>
+
+      <section class="metrics" aria-label="Market summary">
+        <div>
+          <span>High Priority</span>
+          <strong id="highCount">0</strong>
+        </div>
+        <div>
+          <span>Average Score</span>
+          <strong id="avgScore">0</strong>
+        </div>
+        <div>
+          <span>Leading Sectors</span>
+          <strong id="leaders">-</strong>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <div class="opportunity-list">
+          <div class="section-heading">
+            <h3>Ranked Opportunities</h3>
+            <span id="resultCount">0 shown</span>
+          </div>
+          <div id="opportunities"></div>
+        </div>
+
+        <aside class="detail-panel">
+          <div class="section-heading">
+            <h3>Research Detail</h3>
+            <span id="detailPriority">Select a ticker</span>
+          </div>
+          <div id="detail" class="empty-state">
+            The highest ranked ticker will appear here as the stream starts.
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

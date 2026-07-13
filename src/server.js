@@ -1,14 +1,15 @@
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { MarketSimulator } from "./marketData.js";
-import { recordSignals } from "./storage.js";
+import { MarketEngine } from "./marketData.js";
+import { getBacktestSummary } from "./backtest.js";
+import { getRecentSignals } from "./database.js";
 
 const port = Number(process.env.PORT ?? 3001);
 const publicDir = path.join(process.cwd(), "public");
-const simulator = new MarketSimulator();
+const engine = new MarketEngine();
 const clients = new Set();
-let latestSnapshot = simulator.next();
+let latestSnapshot = engine.next();
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -66,6 +67,16 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (url.pathname === "/api/signals") {
+    sendJson(response, { signals: getRecentSignals(50) });
+    return;
+  }
+
+  if (url.pathname === "/api/backtest") {
+    sendJson(response, getBacktestSummary());
+    return;
+  }
+
   if (url.pathname.startsWith("/api/research/")) {
     const symbol = url.pathname.split("/").at(-1)?.toUpperCase();
     const opportunity = latestSnapshot.opportunities.find((item) => item.symbol === symbol);
@@ -77,10 +88,9 @@ const server = http.createServer(async (request, response) => {
 });
 
 setInterval(async () => {
-  latestSnapshot = simulator.next();
+  latestSnapshot = engine.next();
   const payload = `data: ${JSON.stringify(latestSnapshot)}\n\n`;
   for (const client of clients) client.write(payload);
-  await recordSignals(latestSnapshot);
 }, 1000);
 
 server.listen(port, () => {

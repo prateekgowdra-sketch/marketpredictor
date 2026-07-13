@@ -1,25 +1,3 @@
-const catalystTemplates = [
-  { type: "earnings", label: "earnings momentum", strength: 18 },
-  { type: "news", label: "positive news velocity", strength: 14 },
-  { type: "sector", label: "sector rotation tailwind", strength: 12 },
-  { type: "filing", label: "fresh filing or corporate update", strength: 10 },
-  { type: "volume", label: "unusual participation", strength: 16 },
-  { type: "technical", label: "breakout setup", strength: 15 }
-];
-
-const companyProfiles = {
-  NVDA: { name: "NVIDIA", sector: "Semiconductors", marketCap: "mega", beta: 1.8 },
-  AMD: { name: "Advanced Micro Devices", sector: "Semiconductors", marketCap: "large", beta: 1.9 },
-  TSLA: { name: "Tesla", sector: "EV / Energy", marketCap: "mega", beta: 2.1 },
-  PLTR: { name: "Palantir", sector: "Software / AI", marketCap: "large", beta: 2.0 },
-  SOFI: { name: "SoFi", sector: "Fintech", marketCap: "mid", beta: 1.7 },
-  COIN: { name: "Coinbase", sector: "Crypto Infrastructure", marketCap: "large", beta: 2.4 },
-  SMCI: { name: "Super Micro Computer", sector: "AI Infrastructure", marketCap: "large", beta: 2.2 },
-  RIVN: { name: "Rivian", sector: "EV", marketCap: "mid", beta: 2.3 },
-  HOOD: { name: "Robinhood", sector: "Brokerage / Fintech", marketCap: "mid", beta: 1.9 },
-  MSTR: { name: "MicroStrategy", sector: "Bitcoin Treasury", marketCap: "large", beta: 2.6 }
-};
-
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -29,24 +7,14 @@ function normalize(value, min, max) {
   return clamp((value - min) / (max - min), 0, 1);
 }
 
-function activeCatalysts(symbol, technical, tick) {
-  const seed = symbol.charCodeAt(0) + symbol.charCodeAt(symbol.length - 1) + tick;
-  const catalysts = [];
-
-  if (technical.relativeVolume > 1.25) catalysts.push(catalystTemplates[4]);
-  if (technical.breakoutPressure > 0.996) catalysts.push(catalystTemplates[5]);
-  if (technical.priceChange > 0.006) catalysts.push(catalystTemplates[1]);
-  if (seed % 29 === 0) catalysts.push(catalystTemplates[0]);
-  if (seed % 37 === 0) catalysts.push(catalystTemplates[2]);
-  if (seed % 43 === 0) catalysts.push(catalystTemplates[3]);
-
-  return catalysts;
-}
-
-export function scoreOpportunity(symbol, technical, tick) {
-  const catalysts = activeCatalysts(symbol, technical, tick);
-  const profile = companyProfiles[symbol] ?? {
-    name: symbol,
+export function scoreOpportunity(symbol, technical, tick, events = [], profile = null) {
+  const catalysts = events.map((event) => ({
+    type: event.type,
+    label: event.title.replace(`${symbol} `, "").toLowerCase(),
+    strength: event.strength
+  }));
+  const companyProfile = profile ?? {
+    company: symbol,
     sector: "Unknown",
     marketCap: "unknown",
     beta: 1.4
@@ -81,11 +49,12 @@ export function scoreOpportunity(symbol, technical, tick) {
   if ((technical.rsi ?? 0) > 55 && (technical.rsi ?? 0) < 76) reasons.push("momentum is strong without extreme RSI");
   if (technical.breakoutPressure > 0.996) reasons.push("testing recent high");
   for (const catalyst of catalysts) reasons.push(catalyst.label);
+  const uniqueReasons = [...new Set(reasons)];
 
   return {
     symbol,
-    company: profile.name,
-    sector: profile.sector,
+    company: companyProfile.company,
+    sector: companyProfile.sector,
     price: technical.price,
     score,
     priority: score >= 75 ? "High" : score >= 55 ? "Medium" : "Watch",
@@ -95,11 +64,11 @@ export function scoreOpportunity(symbol, technical, tick) {
     stop,
     target,
     catalysts,
-    reasons: reasons.slice(0, 6),
+    reasons: uniqueReasons.slice(0, 6),
     technical,
     risk: {
       volatilityPct: technical.volatilityPct,
-      beta: profile.beta,
+      beta: companyProfile.beta,
       note: technical.volatilityPct > 0.05 ? "Wide intraday movement; size carefully." : "Normal simulated volatility."
     },
     updatedAt: new Date().toISOString()

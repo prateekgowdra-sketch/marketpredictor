@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "check": "node --check src/server.js && node --check src/marketData.js && node --check src/researchEngine.js && node --check src/technicalIndicators.js && node --check src/database.js && node --check src/backtest.js"
   },
   "engines": {
     "node": ">=20"

@@ -10,9 +10,16 @@ const marketToneEl = document.querySelector("#marketTone");
 const highCountEl = document.querySelector("#highCount");
 const avgScoreEl = document.querySelector("#avgScore");
 const leadersEl = document.querySelector("#leaders");
+const learningUpdatedEl = document.querySelector("#learningUpdated");
+const sampleSizeEl = document.querySelector("#sampleSize");
+const highPrioritySignalsEl = document.querySelector("#highPrioritySignals");
+const outcomeWindowCountEl = document.querySelector("#outcomeWindowCount");
+const learningNoteEl = document.querySelector("#learningNote");
+const outcomeStatsEl = document.querySelector("#outcomeStats");
 
 let snapshot = null;
 let selectedSymbol = null;
+let backtest = null;
 
 function money(value) {
   return new Intl.NumberFormat("en-US", {
@@ -119,11 +126,33 @@ function renderDetail() {
   `;
 }
 
+function renderLearning() {
+  if (!backtest) return;
+  learningUpdatedEl.textContent = new Date(backtest.generatedAt).toLocaleTimeString();
+  sampleSizeEl.textContent = backtest.sampleSize;
+  highPrioritySignalsEl.textContent = backtest.highPrioritySignals;
+  outcomeWindowCountEl.textContent = backtest.outcomeStats.length;
+  learningNoteEl.textContent = backtest.note;
+  outcomeStatsEl.innerHTML = backtest.outcomeStats
+    .map(
+      (stat) => `
+        <div class="outcome-card">
+          <strong>${stat.horizon}</strong>
+          <span>Samples: ${stat.count}</span>
+          <span>Avg return: ${pct(stat.averageReturn)}</span>
+          <span>Win rate: ${pct(stat.winRate)}</span>
+        </div>
+      `
+    )
+    .join("");
+}
+
 function render() {
   if (!snapshot) return;
   renderSummary();
   renderList();
   renderDetail();
+  renderLearning();
 }
 
 scoreFilterEl.addEventListener("input", () => {
@@ -145,3 +174,12 @@ events.onmessage = (event) => {
 events.onerror = () => {
   lastUpdatedEl.textContent = "Reconnecting";
 };
+
+async function refreshBacktest() {
+  const response = await fetch("/api/backtest");
+  backtest = await response.json();
+  renderLearning();
+}
+
+refreshBacktest();
+setInterval(refreshBacktest, 5000);

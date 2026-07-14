@@ -13,9 +13,13 @@ const leadersEl = document.querySelector("#leaders");
 const learningUpdatedEl = document.querySelector("#learningUpdated");
 const sampleSizeEl = document.querySelector("#sampleSize");
 const highPrioritySignalsEl = document.querySelector("#highPrioritySignals");
-const outcomeWindowCountEl = document.querySelector("#outcomeWindowCount");
+const modelStateEl = document.querySelector("#modelState");
 const learningNoteEl = document.querySelector("#learningNote");
 const outcomeStatsEl = document.querySelector("#outcomeStats");
+const predictionCountEl = document.querySelector("#predictionCount");
+const predictionListEl = document.querySelector("#predictionList");
+const researchCountEl = document.querySelector("#researchCount");
+const researchListEl = document.querySelector("#researchList");
 
 let snapshot = null;
 let selectedSymbol = null;
@@ -31,6 +35,11 @@ function money(value) {
 
 function pct(value) {
   return `${(value * 100).toFixed(2)}%`;
+}
+
+function signedPct(value) {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${pct(value)}`;
 }
 
 function priorityClass(priority) {
@@ -78,6 +87,7 @@ function renderList() {
       <div class="score">
         <strong>${item.score.toFixed(0)}</strong>
         <span class="${priorityClass(item.priority)}">${item.priority}</span>
+        <span class="probability">${item.prediction ? pct(item.prediction.probabilityUp) : "-"}</span>
       </div>
     `;
     row.addEventListener("click", () => {
@@ -116,6 +126,8 @@ function renderDetail() {
       <div><span>Stop / Target</span><strong>${money(item.stop)} / ${money(item.target)}</strong></div>
       <div><span>RSI</span><strong>${item.technical.rsi ? item.technical.rsi.toFixed(1) : "-"}</strong></div>
       <div><span>Volatility</span><strong>${pct(item.technical.volatilityPct)}</strong></div>
+      <div><span>ML Up Probability</span><strong>${item.prediction ? pct(item.prediction.probabilityUp) : "-"}</strong></div>
+      <div><span>Expected / Risk</span><strong>${item.prediction ? `${signedPct(item.prediction.expectedReturn)} / ${item.prediction.riskScore.toFixed(0)}` : "-"}</strong></div>
     </div>
     <h3>Why It Is Flagged</h3>
     <ul class="reason-list">
@@ -131,7 +143,7 @@ function renderLearning() {
   learningUpdatedEl.textContent = new Date(backtest.generatedAt).toLocaleTimeString();
   sampleSizeEl.textContent = backtest.sampleSize;
   highPrioritySignalsEl.textContent = backtest.highPrioritySignals;
-  outcomeWindowCountEl.textContent = backtest.outcomeStats.length;
+  modelStateEl.textContent = backtest.model?.metrics?.mode ?? "heuristic";
   learningNoteEl.textContent = backtest.note;
   outcomeStatsEl.innerHTML = backtest.outcomeStats
     .map(
@@ -141,6 +153,32 @@ function renderLearning() {
           <span>Samples: ${stat.count}</span>
           <span>Avg return: ${pct(stat.averageReturn)}</span>
           <span>Win rate: ${pct(stat.winRate)}</span>
+          <span>Max gain: ${pct(stat.averageMaxGain)}</span>
+          <span>Drawdown: ${pct(stat.averageMaxDrawdown)}</span>
+        </div>
+      `
+    )
+    .join("");
+  predictionCountEl.textContent = backtest.recentPredictions?.length ?? 0;
+  predictionListEl.innerHTML = (backtest.recentPredictions ?? [])
+    .slice(0, 8)
+    .map(
+      (prediction) => `
+        <div class="intel-item">
+          <strong>${prediction.symbol}</strong>
+          <span>${pct(prediction.probability_up)} up - ${signedPct(prediction.expected_return)} expected - risk ${prediction.risk_score.toFixed(0)}</span>
+        </div>
+      `
+    )
+    .join("");
+  researchCountEl.textContent = backtest.recentResearch?.length ?? 0;
+  researchListEl.innerHTML = (backtest.recentResearch ?? [])
+    .slice(0, 8)
+    .map(
+      (event) => `
+        <div class="intel-item">
+          <strong>${event.symbol} ${event.type}</strong>
+          <span>${event.title}</span>
         </div>
       `
     )
@@ -176,9 +214,14 @@ events.onerror = () => {
 };
 
 async function refreshBacktest() {
-  const response = await fetch("/api/backtest");
-  backtest = await response.json();
-  renderLearning();
+  try {
+    const response = await fetch("/api/backtest");
+    if (!response.ok) return;
+    backtest = await response.json();
+    renderLearning();
+  } catch {
+    learningUpdatedEl.textContent = "Reconnecting";
+  }
 }
 
 refreshBacktest();

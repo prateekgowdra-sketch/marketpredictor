@@ -1,5 +1,5 @@
 import { configuredSymbols } from "../config.js";
-import { companyProfiles as mockProfiles } from "./mockProvider.js";
+import { companyProfiles as mockProfiles, MockMarketProvider } from "./mockProvider.js";
 
 function toCandle(bar) {
   return {
@@ -27,6 +27,8 @@ export class AlpacaMarketProvider {
     this.name = "alpaca";
     this.symbols = configuredSymbols();
     this.state = new Map();
+    this.mockProvider = new MockMarketProvider();
+    this.mockSymbols = new Set();
     this.tick = 0;
     this.lastFetchAt = 0;
     this.dataBaseUrl = process.env.ALPACA_DATA_BASE_URL ?? "https://data.alpaca.markets";
@@ -57,11 +59,15 @@ export class AlpacaMarketProvider {
 
     const payload = await this.request(`/v2/stocks/bars?${params}`);
     const activeSymbols = [];
+    const mockHistory = this.mockProvider.history();
     for (const symbol of this.symbols) {
       const bars = payload.bars?.[symbol] ?? [];
       const candles = bars.map(toCandle).slice(-180);
       if (candles.length < 2) {
-        console.warn(`Skipping ${symbol}: Alpaca returned ${candles.length} usable bars.`);
+        console.warn(`Using mock fallback for ${symbol}: Alpaca returned ${candles.length} usable bars.`);
+        this.state.set(symbol, [...(mockHistory.get(symbol) ?? [])]);
+        this.mockSymbols.add(symbol);
+        activeSymbols.push(symbol);
         continue;
       }
       this.state.set(symbol, candles);
@@ -87,6 +93,13 @@ export class AlpacaMarketProvider {
 
   async nextCandles() {
     this.tick += 1;
+    const mockUpdates = this.mockProvider.nextCandles().updates;
+    for (const update of mockUpdates) {
+      if (this.mockSymbols.has(update.symbol)) {
+        this.state.set(update.symbol, update.candles);
+      }
+    }
+
     const shouldFetch = Date.now() - this.lastFetchAt >= this.fetchIntervalMs;
     if (shouldFetch) {
       await this.refreshLatestBars();

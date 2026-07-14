@@ -1,4 +1,10 @@
-import { getOutcomeStats, getRecentSignals } from "./database.js";
+import {
+  getLatestModelRun,
+  getOutcomeStats,
+  getRecentPredictions,
+  getRecentResearchEvents,
+  getRecentSignals
+} from "./database.js";
 
 export function getBacktestSummary() {
   const stats = getOutcomeStats();
@@ -10,6 +16,9 @@ export function getBacktestSummary() {
     sampleSize: recentSignals.length,
     highPrioritySignals: highPriority.length,
     outcomeStats: stats,
+    model: getLatestModelRun(),
+    recentPredictions: getRecentPredictions(10),
+    recentResearch: getRecentResearchEvents(12),
     note:
       stats.length === 0
         ? "Outcome windows are still collecting. Keep the stream running to build the first backtest sample."

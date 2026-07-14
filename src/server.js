@@ -4,7 +4,7 @@ import path from "node:path";
 import { loadEnv } from "./config.js";
 import { MarketEngine } from "./marketData.js";
 import { getBacktestSummary } from "./backtest.js";
-import { getRecentSignals } from "./database.js";
+import { getRecentPredictions, getRecentResearchEvents, getRecentSignals } from "./database.js";
 
 loadEnv();
 
@@ -72,6 +72,16 @@ const server = http.createServer(async (request, response) => {
 
   if (url.pathname === "/api/signals") {
     sendJson(response, { signals: getRecentSignals(50) });
+    return;
+  }
+
+  if (url.pathname === "/api/research-events") {
+    sendJson(response, { events: getRecentResearchEvents(50) });
+    return;
+  }
+
+  if (url.pathname === "/api/predictions") {
+    sendJson(response, { predictions: getRecentPredictions(50) });
     return;
   }
 

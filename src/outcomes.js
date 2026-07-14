@@ -18,7 +18,11 @@ export class OutcomeTracker {
         target: signal.target,
         stop: signal.stop,
         horizon: horizon.label,
-        dueTick: tick + horizon.ticks
+        dueTick: tick + horizon.ticks,
+        maxPrice: signal.price,
+        minPrice: signal.price,
+        firstTargetTick: null,
+        firstStopTick: null
       });
     }
   }
@@ -29,22 +33,47 @@ export class OutcomeTracker {
     const stillPending = [];
 
     for (const item of this.pending) {
+      const price = priceBySymbol.get(item.symbol);
+      if (price) {
+        item.maxPrice = Math.max(item.maxPrice, price);
+        item.minPrice = Math.min(item.minPrice, price);
+        if (item.firstTargetTick === null && price >= item.target) item.firstTargetTick = currentTick;
+        if (item.firstStopTick === null && price <= item.stop) item.firstStopTick = currentTick;
+      }
+
       if (item.dueTick > currentTick) {
         stillPending.push(item);
         continue;
       }
 
-      const price = priceBySymbol.get(item.symbol);
       if (!price) continue;
+      const returnPct = (price - item.entryPrice) / item.entryPrice;
+      const maxGainPct = (item.maxPrice - item.entryPrice) / item.entryPrice;
+      const maxDrawdownPct = (item.minPrice - item.entryPrice) / item.entryPrice;
+      const hitTarget = item.firstTargetTick !== null;
+      const hitStop = item.firstStopTick !== null;
+      const targetBeforeStop =
+        hitTarget && (!hitStop || item.firstTargetTick <= item.firstStopTick);
 
       due.push({
         signalId: item.signalId,
         horizon: item.horizon,
         checkedAt: new Date().toISOString(),
         price,
-        returnPct: (price - item.entryPrice) / item.entryPrice,
-        hitTarget: price >= item.target,
-        hitStop: price <= item.stop
+        returnPct,
+        hitTarget,
+        hitStop,
+        maxPrice: item.maxPrice,
+        minPrice: item.minPrice,
+        maxGainPct,
+        maxDrawdownPct,
+        labels: {
+          profitable: returnPct > 0,
+          moveUp1Pct: maxGainPct >= 0.01,
+          moveUp2Pct: maxGainPct >= 0.02,
+          avoid: maxDrawdownPct <= -0.01 && maxGainPct < 0.005,
+          targetBeforeStop
+        }
       });
     }
 

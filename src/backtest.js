@@ -1,7 +1,9 @@
 import {
   getLatestModelRun,
   getOutcomeStats,
+  getPaperTradeStats,
   getRecentPredictions,
+  getRecentPaperTrades,
   getRecentResearchEvents,
   getRecentSignals
 } from "./database.js";
@@ -16,6 +18,8 @@ export function getBacktestSummary() {
     sampleSize: recentSignals.length,
     highPrioritySignals: highPriority.length,
     outcomeStats: stats,
+    paperStats: getPaperTradeStats(),
+    recentPaperTrades: getRecentPaperTrades(10),
     model: getLatestModelRun(),
     recentPredictions: getRecentPredictions(10),
     recentResearch: getRecentResearchEvents(12),

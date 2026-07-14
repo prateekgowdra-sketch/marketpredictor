@@ -13,6 +13,8 @@ import { OutcomeTracker } from "./outcomes.js";
 import { ResearchIngestion } from "./researchIngestion.js";
 import { buildFeatureVector } from "./features.js";
 import { PredictionEngine } from "./mlModel.js";
+import { PaperTrader } from "./paperTrader.js";
+import { evaluateSignal } from "./signalGate.js";
 import { profileForSymbol, UniverseScanner } from "./universeScanner.js";
 
 export class MarketEngine {
@@ -26,6 +28,7 @@ export class MarketEngine {
     this.outcomes = new OutcomeTracker();
     this.research = new ResearchIngestion();
     this.predictions = new PredictionEngine();
+    this.paperTrader = new PaperTrader();
     this.profiles = new Map();
     this.scanner = new UniverseScanner(this.provider.profiles().map((profile) => profile.symbol));
     this.latestScan = null;
@@ -87,6 +90,7 @@ export class MarketEngine {
         0,
         Math.min(96, opportunity.confidence * 0.65 + prediction.probabilityUp * 100 * 0.35)
       );
+      opportunity.signalDecision = evaluateSignal(opportunity);
       opportunities.push(opportunity);
     }
 
@@ -112,8 +116,9 @@ export class MarketEngine {
         }
       });
 
-      if (opportunity.score >= 70) {
+      if (opportunity.signalDecision.label !== "Reject") {
         const signalId = saveSignal(opportunity, this.provider.name);
+        opportunity.signalId = Number(signalId);
         this.outcomes.track(signalId, opportunity, tick);
       }
     }
@@ -123,13 +128,28 @@ export class MarketEngine {
       saveOutcome(outcome);
     }
 
+    const paper = this.paperTrader.run(opportunities, tick);
+
     return {
       tick,
       provider: this.provider.name,
       generatedAt: new Date().toISOString(),
       summary: summarizeMarket(opportunities),
       scan: this.latestScan,
+      signalSummary: summarizeSignalDecisions(opportunities),
+      paper,
       opportunities
     };
   }
+}
+
+function summarizeSignalDecisions(opportunities) {
+  const counts = { Signal: 0, Watch: 0, Reject: 0 };
+  for (const opportunity of opportunities) {
+    counts[opportunity.signalDecision?.label ?? "Reject"] += 1;
+  }
+  return {
+    ...counts,
+    actionRate: opportunities.length ? counts.Signal / opportunities.length : 0
+  };
 }

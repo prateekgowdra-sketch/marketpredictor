@@ -66,6 +66,32 @@
         </div>
       </section>
 
+      <section class="signal-panel">
+        <div class="section-heading">
+          <h3>Signal Gate</h3>
+          <span id="signalUpdated">Waiting</span>
+        </div>
+        <div class="signal-grid">
+          <div>
+            <span>Signals</span>
+            <strong id="signalCount">0</strong>
+          </div>
+          <div>
+            <span>Watch</span>
+            <strong id="watchCount">0</strong>
+          </div>
+          <div>
+            <span>Reject</span>
+            <strong id="rejectCount">0</strong>
+          </div>
+          <div>
+            <span>Paper P/L</span>
+            <strong id="paperPnl">$0.00</strong>
+          </div>
+        </div>
+        <div id="paperTrades" class="paper-trades"></div>
+      </section>
+
       <section class="scan-panel">
         <div class="section-heading">
           <h3>Market Scan</h3>
@@ -125,6 +151,10 @@
           <div>
             <span>Model State</span>
             <strong id="modelState">Heuristic</strong>
+          </div>
+          <div>
+            <span>Paper Win Rate</span>
+            <strong id="paperWinRate">0.00%</strong>
           </div>
         </div>
         <p id="learningNote" class="meta">Outcome windows are still collecting.</p>

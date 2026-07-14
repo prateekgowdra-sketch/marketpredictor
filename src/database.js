@@ -97,10 +97,35 @@ db.exec(`
     explanation_json TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS paper_trades (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol TEXT NOT NULL,
+    signal_id INTEGER,
+    opened_at TEXT NOT NULL,
+    closed_at TEXT,
+    status TEXT NOT NULL,
+    entry_price REAL NOT NULL,
+    quantity REAL NOT NULL,
+    notional REAL NOT NULL,
+    stop REAL NOT NULL,
+    target REAL NOT NULL,
+    exit_price REAL,
+    exit_reason TEXT,
+    pnl_pct REAL DEFAULT 0,
+    pnl_dollars REAL DEFAULT 0,
+    max_gain_pct REAL DEFAULT 0,
+    max_drawdown_pct REAL DEFAULT 0,
+    ticks_held INTEGER DEFAULT 0,
+    decision_json TEXT NOT NULL,
+    prediction_json TEXT NOT NULL,
+    FOREIGN KEY(signal_id) REFERENCES signals(id) ON DELETE SET NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_candles_symbol_ts ON candles(symbol, ts);
   CREATE INDEX IF NOT EXISTS idx_signals_symbol_ts ON signals(symbol, ts);
   CREATE INDEX IF NOT EXISTS idx_outcomes_signal ON outcomes(signal_id);
   CREATE INDEX IF NOT EXISTS idx_predictions_symbol_ts ON predictions(symbol, ts);
+  CREATE INDEX IF NOT EXISTS idx_paper_trades_status ON paper_trades(status, opened_at);
 `);
 
 function tableColumns(table) {
@@ -176,6 +201,41 @@ const statements = {
   insertModelRun: db.prepare(`
     INSERT INTO model_runs (ts, model_name, training_rows, metrics_json, notes)
     VALUES (?, ?, ?, ?, ?)
+  `),
+  insertPaperTrade: db.prepare(`
+    INSERT INTO paper_trades (
+      symbol, signal_id, opened_at, status, entry_price, quantity, notional,
+      stop, target, decision_json, prediction_json
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `),
+  updatePaperTrade: db.prepare(`
+    UPDATE paper_trades SET
+      closed_at = ?,
+      status = ?,
+      exit_price = ?,
+      exit_reason = ?,
+      pnl_pct = ?,
+      pnl_dollars = ?,
+      max_gain_pct = ?,
+      max_drawdown_pct = ?,
+      ticks_held = ?
+    WHERE id = ?
+  `),
+  recentPaperTrades: db.prepare(`
+    SELECT * FROM paper_trades
+    ORDER BY opened_at DESC, id DESC
+    LIMIT ?
+  `),
+  paperTradeStats: db.prepare(`
+    SELECT
+      COUNT(*) AS total,
+      SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open_count,
+      SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed_count,
+      AVG(CASE WHEN status = 'closed' AND pnl_pct > 0 THEN 1.0 WHEN status = 'closed' THEN 0.0 ELSE NULL END) AS win_rate,
+      AVG(CASE WHEN status = 'closed' THEN pnl_pct ELSE NULL END) AS average_pnl_pct,
+      SUM(CASE WHEN status = 'closed' THEN pnl_dollars ELSE 0 END) AS realized_pnl
+    FROM paper_trades
   `),
   recentSignals: db.prepare(`
     SELECT * FROM signals
@@ -342,6 +402,80 @@ export function saveModelRun(run) {
     JSON.stringify(run.metrics),
     run.notes ?? null
   );
+}
+
+function parsePaperTrade(row) {
+  const { decision_json, prediction_json, ...trade } = row;
+  return {
+    id: trade.id,
+    symbol: trade.symbol,
+    signalId: trade.signal_id,
+    openedAt: trade.opened_at,
+    closedAt: trade.closed_at,
+    status: trade.status,
+    entryPrice: trade.entry_price,
+    quantity: trade.quantity,
+    notional: trade.notional,
+    stop: trade.stop,
+    target: trade.target,
+    exitPrice: trade.exit_price,
+    exitReason: trade.exit_reason,
+    pnlPct: trade.pnl_pct,
+    pnlDollars: trade.pnl_dollars,
+    maxGainPct: trade.max_gain_pct,
+    maxDrawdownPct: trade.max_drawdown_pct,
+    ticksHeld: trade.ticks_held,
+    decision: JSON.parse(decision_json),
+    prediction: JSON.parse(prediction_json)
+  };
+}
+
+export function savePaperTrade(trade) {
+  const result = statements.insertPaperTrade.run(
+    trade.symbol,
+    trade.signalId ?? null,
+    trade.openedAt,
+    trade.status,
+    trade.entryPrice,
+    trade.quantity,
+    trade.notional,
+    trade.stop,
+    trade.target,
+    JSON.stringify(trade.decision),
+    JSON.stringify(trade.prediction ?? null)
+  );
+  return Number(result.lastInsertRowid);
+}
+
+export function updatePaperTrade(trade) {
+  statements.updatePaperTrade.run(
+    trade.closedAt ?? null,
+    trade.status,
+    trade.exitPrice ?? null,
+    trade.exitReason ?? null,
+    trade.pnlPct ?? 0,
+    trade.pnlDollars ?? 0,
+    trade.maxGainPct ?? 0,
+    trade.maxDrawdownPct ?? 0,
+    trade.ticksHeld ?? 0,
+    trade.id
+  );
+}
+
+export function getRecentPaperTrades(limit = 30) {
+  return statements.recentPaperTrades.all(limit).map(parsePaperTrade);
+}
+
+export function getPaperTradeStats() {
+  const row = statements.paperTradeStats.get();
+  return {
+    total: row.total ?? 0,
+    openCount: row.open_count ?? 0,
+    closedCount: row.closed_count ?? 0,
+    winRate: row.win_rate ?? 0,
+    averagePnlPct: row.average_pnl_pct ?? 0,
+    realizedPnl: row.realized_pnl ?? 0
+  };
 }
 
 export function getRecentSignals(limit = 50) {

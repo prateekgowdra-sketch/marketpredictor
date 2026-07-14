@@ -10,6 +10,12 @@ const marketToneEl = document.querySelector("#marketTone");
 const highCountEl = document.querySelector("#highCount");
 const avgScoreEl = document.querySelector("#avgScore");
 const leadersEl = document.querySelector("#leaders");
+const signalUpdatedEl = document.querySelector("#signalUpdated");
+const signalCountEl = document.querySelector("#signalCount");
+const watchCountEl = document.querySelector("#watchCount");
+const rejectCountEl = document.querySelector("#rejectCount");
+const paperPnlEl = document.querySelector("#paperPnl");
+const paperTradesEl = document.querySelector("#paperTrades");
 const scanUpdatedEl = document.querySelector("#scanUpdated");
 const universeSizeEl = document.querySelector("#universeSize");
 const deepCandidateCountEl = document.querySelector("#deepCandidateCount");
@@ -19,6 +25,7 @@ const learningUpdatedEl = document.querySelector("#learningUpdated");
 const sampleSizeEl = document.querySelector("#sampleSize");
 const highPrioritySignalsEl = document.querySelector("#highPrioritySignals");
 const modelStateEl = document.querySelector("#modelState");
+const paperWinRateEl = document.querySelector("#paperWinRate");
 const learningNoteEl = document.querySelector("#learningNote");
 const outcomeStatsEl = document.querySelector("#outcomeStats");
 const predictionCountEl = document.querySelector("#predictionCount");
@@ -51,6 +58,12 @@ function priorityClass(priority) {
   if (priority === "High") return "priority";
   if (priority === "Medium") return "priority medium";
   return "priority watch";
+}
+
+function decisionClass(label) {
+  if (label === "Signal") return "decision signal";
+  if (label === "Watch") return "decision watch";
+  return "decision reject";
 }
 
 function filteredOpportunities() {
@@ -98,6 +111,39 @@ function renderScan() {
     .join("");
 }
 
+function renderSignalGate() {
+  const summary = snapshot.signalSummary ?? { Signal: 0, Watch: 0, Reject: 0 };
+  const paper = snapshot.paper ?? { stats: {}, openTrades: [], recentTrades: [] };
+  signalUpdatedEl.textContent = new Date(paper.generatedAt ?? snapshot.generatedAt).toLocaleTimeString();
+  signalCountEl.textContent = summary.Signal ?? 0;
+  watchCountEl.textContent = summary.Watch ?? 0;
+  rejectCountEl.textContent = summary.Reject ?? 0;
+  paperPnlEl.textContent = money(paper.stats?.realizedPnl ?? 0);
+
+  const openTrades = paper.openTrades ?? [];
+  const recentClosed = (paper.recentTrades ?? []).filter((trade) => trade.status === "closed").slice(0, 4);
+  const trades = [...openTrades, ...recentClosed].slice(0, 6);
+  paperTradesEl.innerHTML =
+    trades.length === 0
+      ? `<div class="empty-state">No paper trades yet. The gate only opens trades when score, ML, VWAP, risk, and reward/risk line up.</div>`
+      : trades
+          .map(
+            (trade) => `
+              <div class="paper-trade ${trade.status}">
+                <div>
+                  <strong>${trade.symbol}</strong>
+                  <span>${trade.status}${trade.exitReason ? ` - ${trade.exitReason}` : ""}</span>
+                </div>
+                <div>
+                  <strong>${signedPct(trade.pnlPct ?? 0)}</strong>
+                  <span>${money(trade.entryPrice)} entry</span>
+                </div>
+              </div>
+            `
+          )
+          .join("");
+}
+
 function renderList() {
   const items = filteredOpportunities();
   resultCountEl.textContent = `${items.length} shown`;
@@ -115,8 +161,9 @@ function renderList() {
       <div class="reasons">
         ${item.reasons.slice(0, 4).map((reason) => `<span class="chip">${reason}</span>`).join("")}
       </div>
-      <div class="score">
-        <strong>${item.score.toFixed(0)}</strong>
+        <div class="score">
+          <strong>${item.score.toFixed(0)}</strong>
+        <span class="${decisionClass(item.signalDecision?.label)}">${item.signalDecision?.label ?? "Reject"}</span>
         <span class="${priorityClass(item.priority)}">${item.priority}</span>
         <span class="probability">${item.prediction ? pct(item.prediction.probabilityUp) : "-"}</span>
       </div>
@@ -140,7 +187,7 @@ function renderDetail() {
     return;
   }
 
-  detailPriorityEl.textContent = `${item.priority} - ${item.action}`;
+  detailPriorityEl.textContent = `${item.signalDecision?.label ?? item.priority} - ${item.signalDecision?.action ?? item.action}`;
   detailEl.className = "";
   detailEl.innerHTML = `
     <div class="detail-title">
@@ -159,6 +206,13 @@ function renderDetail() {
       <div><span>Volatility</span><strong>${pct(item.technical.volatilityPct)}</strong></div>
       <div><span>ML Up Probability</span><strong>${item.prediction ? pct(item.prediction.probabilityUp) : "-"}</strong></div>
       <div><span>Expected / Risk</span><strong>${item.prediction ? `${signedPct(item.prediction.expectedReturn)} / ${item.prediction.riskScore.toFixed(0)}` : "-"}</strong></div>
+      <div><span>Signal Gate</span><strong>${item.signalDecision?.label ?? "-"}</strong></div>
+      <div><span>Reward / Risk</span><strong>${item.signalDecision ? `${item.signalDecision.rewardRisk.toFixed(2)}x` : "-"}</strong></div>
+    </div>
+    <h3>Gate Check</h3>
+    <div class="gate-check">
+      ${(item.signalDecision?.confirmations ?? []).map((reason) => `<span class="confirm">${reason}</span>`).join("")}
+      ${(item.signalDecision?.blockers ?? []).map((reason) => `<span class="blocker">${reason}</span>`).join("")}
     </div>
     <h3>Why It Is Flagged</h3>
     <ul class="reason-list">
@@ -175,6 +229,7 @@ function renderLearning() {
   sampleSizeEl.textContent = backtest.sampleSize;
   highPrioritySignalsEl.textContent = backtest.highPrioritySignals;
   modelStateEl.textContent = backtest.model?.metrics?.mode ?? "heuristic";
+  paperWinRateEl.textContent = pct(backtest.paperStats?.winRate ?? 0);
   learningNoteEl.textContent = backtest.note;
   outcomeStatsEl.innerHTML = backtest.outcomeStats
     .map(
@@ -219,6 +274,7 @@ function renderLearning() {
 function render() {
   if (!snapshot) return;
   renderSummary();
+  renderSignalGate();
   renderScan();
   renderList();
   renderDetail();

@@ -4,7 +4,13 @@ import path from "node:path";
 import { loadEnv } from "./config.js";
 import { MarketEngine } from "./marketData.js";
 import { getBacktestSummary } from "./backtest.js";
-import { getRecentPredictions, getRecentResearchEvents, getRecentSignals } from "./database.js";
+import {
+  getPaperTradeStats,
+  getRecentPaperTrades,
+  getRecentPredictions,
+  getRecentResearchEvents,
+  getRecentSignals
+} from "./database.js";
 
 loadEnv();
 
@@ -77,6 +83,30 @@ const server = http.createServer(async (request, response) => {
 
   if (url.pathname === "/api/signals") {
     sendJson(response, { signals: getRecentSignals(50) });
+    return;
+  }
+
+  if (url.pathname === "/api/signal-decisions") {
+    sendJson(response, {
+      summary: latestSnapshot.signalSummary,
+      decisions: latestSnapshot.opportunities.map((opportunity) => ({
+        symbol: opportunity.symbol,
+        price: opportunity.price,
+        score: opportunity.score,
+        priority: opportunity.priority,
+        decision: opportunity.signalDecision,
+        prediction: opportunity.prediction
+      }))
+    });
+    return;
+  }
+
+  if (url.pathname === "/api/paper-trades") {
+    sendJson(response, {
+      generatedAt: new Date().toISOString(),
+      stats: getPaperTradeStats(),
+      trades: getRecentPaperTrades(50)
+    });
     return;
   }
 

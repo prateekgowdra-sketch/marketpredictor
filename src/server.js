@@ -70,6 +70,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (url.pathname === "/api/scan") {
+    sendJson(response, latestSnapshot.scan ?? { error: "Scan not ready" });
+    return;
+  }
+
   if (url.pathname === "/api/signals") {
     sendJson(response, { signals: getRecentSignals(50) });
     return;

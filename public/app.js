@@ -10,6 +10,11 @@ const marketToneEl = document.querySelector("#marketTone");
 const highCountEl = document.querySelector("#highCount");
 const avgScoreEl = document.querySelector("#avgScore");
 const leadersEl = document.querySelector("#leaders");
+const scanUpdatedEl = document.querySelector("#scanUpdated");
+const universeSizeEl = document.querySelector("#universeSize");
+const deepCandidateCountEl = document.querySelector("#deepCandidateCount");
+const activeTrackedEl = document.querySelector("#activeTracked");
+const scanCandidatesEl = document.querySelector("#scanCandidates");
 const learningUpdatedEl = document.querySelector("#learningUpdated");
 const sampleSizeEl = document.querySelector("#sampleSize");
 const highPrioritySignalsEl = document.querySelector("#highPrioritySignals");
@@ -65,6 +70,32 @@ function renderSummary() {
   avgScoreEl.textContent = snapshot.summary.averageScore.toFixed(1);
   leadersEl.textContent = snapshot.summary.leadingSectors.join(", ") || "-";
   lastUpdatedEl.textContent = new Date(snapshot.generatedAt).toLocaleTimeString();
+}
+
+function renderScan() {
+  const scan = snapshot.scan;
+  if (!scan) return;
+  scanUpdatedEl.textContent = new Date(scan.generatedAt).toLocaleTimeString();
+  universeSizeEl.textContent = scan.universeSize;
+  deepCandidateCountEl.textContent = scan.deepCandidateCount;
+  activeTrackedEl.textContent = scan.activeTracked;
+  scanCandidatesEl.innerHTML = scan.candidates
+    .slice(0, 10)
+    .map(
+      (candidate) => `
+        <div class="scan-candidate">
+          <div>
+            <strong>${candidate.symbol}</strong>
+            <span>${candidate.sector}</span>
+          </div>
+          <div>
+            <strong>${candidate.score.toFixed(0)}</strong>
+            <span>RV ${candidate.relativeVolume.toFixed(1)}x - ${signedPct(candidate.momentum)}</span>
+          </div>
+        </div>
+      `
+    )
+    .join("");
 }
 
 function renderList() {
@@ -188,6 +219,7 @@ function renderLearning() {
 function render() {
   if (!snapshot) return;
   renderSummary();
+  renderScan();
   renderList();
   renderDetail();
   renderLearning();

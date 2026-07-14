@@ -91,6 +91,19 @@ export class AlpacaMarketProvider {
     return this.state;
   }
 
+  ensureSymbols(symbols, profileForSymbol) {
+    const mockHistory = this.mockProvider.history();
+    for (const symbol of symbols) {
+      if (this.state.has(symbol)) continue;
+      const profile = profileForSymbol(symbol);
+      this.mockProvider.ensureSymbol(symbol, profile);
+      this.state.set(symbol, [...(mockHistory.get(symbol) ?? [])]);
+      this.mockSymbols.add(symbol);
+      this.symbols.push(symbol);
+    }
+    this.symbols = [...new Set(this.symbols)];
+  }
+
   async nextCandles() {
     this.tick += 1;
     const mockUpdates = this.mockProvider.nextCandles().updates;

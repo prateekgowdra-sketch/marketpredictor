@@ -18,6 +18,7 @@ http://localhost:3001
 
 ## What It Does Now
 
+- Scans a broad configurable market universe, ranks top candidates, then deeply researches a bounded set.
 - Streams continuously updating ticker data through Server-Sent Events.
 - Calculates early technical features: RSI, MACD, VWAP, ATR, moving-average trend, relative volume, breakout pressure.
 - Scores opportunities using technical setup, catalyst strength, momentum, volume, volatility, and risk.
@@ -44,6 +45,10 @@ ALPACA_PAPER=true
 ALPACA_DATA_FEED=iex
 ALPACA_FALLBACK_TO_MOCK=true
 MARKET_SYMBOLS=NVDA,AMD,TSLA,PLTR,SOFI,COIN,SMCI,RIVN,HOOD,MSTR
+ENABLE_UNIVERSE_SCAN=true
+SCAN_MAX_UNIVERSE=100
+SCAN_DEEP_CANDIDATES=20
+SCAN_DASHBOARD_LIMIT=12
 ```
 
 This app currently uses Alpaca for market data only. It does not place orders.

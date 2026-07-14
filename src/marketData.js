@@ -13,6 +13,7 @@ import { OutcomeTracker } from "./outcomes.js";
 import { ResearchIngestion } from "./researchIngestion.js";
 import { buildFeatureVector } from "./features.js";
 import { PredictionEngine } from "./mlModel.js";
+import { profileForSymbol, UniverseScanner } from "./universeScanner.js";
 
 export class MarketEngine {
   static async create() {
@@ -26,6 +27,8 @@ export class MarketEngine {
     this.research = new ResearchIngestion();
     this.predictions = new PredictionEngine();
     this.profiles = new Map();
+    this.scanner = new UniverseScanner(this.provider.profiles().map((profile) => profile.symbol));
+    this.latestScan = null;
 
     for (const profile of this.provider.profiles()) {
       this.profiles.set(profile.symbol, profile);
@@ -41,10 +44,22 @@ export class MarketEngine {
 
   async next() {
     const { tick, updates } = await this.provider.nextCandles();
+    this.latestScan = this.scanner.scan(tick, updates.map((update) => update.symbol));
+    if (this.provider.ensureSymbols) {
+      this.provider.ensureSymbols(this.latestScan.deepSymbols, profileForSymbol);
+      for (const symbol of this.latestScan.deepSymbols) {
+        if (!this.profiles.has(symbol)) {
+          const profile = profileForSymbol(symbol);
+          this.profiles.set(symbol, profile);
+          saveTicker(profile);
+        }
+      }
+    }
+    const { updates: refreshedUpdates } = await this.provider.nextCandles();
     const opportunities = [];
     const researchEvents = [];
 
-    for (const update of updates) {
+    for (const update of refreshedUpdates) {
       saveCandle(update.symbol, update.candle, this.provider.name);
       const technical = buildTechnicalSnapshot(update.candles);
       const profile = this.profiles.get(update.symbol);
@@ -113,6 +128,7 @@ export class MarketEngine {
       provider: this.provider.name,
       generatedAt: new Date().toISOString(),
       summary: summarizeMarket(opportunities),
+      scan: this.latestScan,
       opportunities
     };
   }

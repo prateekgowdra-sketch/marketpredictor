@@ -197,6 +197,54 @@ select {
   margin-bottom: 18px;
 }
 
+.scan-panel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.scan-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.scan-metrics div,
+.scan-candidate {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.scan-metrics span,
+.scan-candidate span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.scan-candidates {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.scan-candidate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.scan-candidate div:last-child {
+  text-align: right;
+}
+
 .opportunity-list,
 .detail-panel {
   min-width: 0;
@@ -446,6 +494,8 @@ select {
 
   .workspace,
   .metrics,
+  .scan-metrics,
+  .scan-candidates,
   .learning-grid,
   .outcome-stats,
   .intel-grid {

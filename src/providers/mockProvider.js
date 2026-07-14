@@ -1,4 +1,4 @@
-const symbols = ["NVDA", "AMD", "TSLA", "PLTR", "SOFI", "COIN", "SMCI", "RIVN", "HOOD", "MSTR"];
+export const symbols = ["NVDA", "AMD", "TSLA", "PLTR", "SOFI", "COIN", "SMCI", "RIVN", "HOOD", "MSTR"];
 
 export const companyProfiles = {
   NVDA: { symbol: "NVDA", company: "NVIDIA", sector: "Semiconductors", marketCap: "mega", beta: 1.8 },
@@ -26,13 +26,19 @@ const basePrices = {
   MSTR: 414
 };
 
+function basePriceFor(symbol) {
+  if (basePrices[symbol]) return basePrices[symbol];
+  const seed = [...symbol].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return 12 + (seed % 420);
+}
+
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
 }
 
 function createInitialCandles(symbol) {
   const candles = [];
-  let price = basePrices[symbol];
+  let price = basePriceFor(symbol);
   for (let index = 0; index < 80; index += 1) {
     const drift = Math.sin(index / 9 + symbol.length) * 0.002;
     const move = randomBetween(-0.011, 0.012) + drift;
@@ -60,6 +66,21 @@ export class MockMarketProvider {
 
   history() {
     return this.state;
+  }
+
+  ensureSymbol(symbol, profile = null) {
+    if (!this.state.has(symbol)) {
+      this.state.set(symbol, createInitialCandles(symbol));
+    }
+    if (profile && !companyProfiles[symbol]) {
+      companyProfiles[symbol] = profile;
+    }
+  }
+
+  ensureSymbols(symbolsToAdd, profileForSymbol) {
+    for (const symbol of symbolsToAdd) {
+      this.ensureSymbol(symbol, profileForSymbol(symbol));
+    }
   }
 
   nextCandles() {

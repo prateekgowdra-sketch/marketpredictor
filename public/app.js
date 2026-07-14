@@ -1,10 +1,12 @@
 const opportunitiesEl = document.querySelector("#opportunities");
 const detailEl = document.querySelector("#detail");
 const detailPriorityEl = document.querySelector("#detailPriority");
+const refreshDetailEl = document.querySelector("#refreshDetail");
 const scoreFilterEl = document.querySelector("#scoreFilter");
 const scoreValueEl = document.querySelector("#scoreValue");
 const priorityFilterEl = document.querySelector("#priorityFilter");
 const resultCountEl = document.querySelector("#resultCount");
+const refreshListEl = document.querySelector("#refreshList");
 const lastUpdatedEl = document.querySelector("#lastUpdated");
 const marketToneEl = document.querySelector("#marketTone");
 const highCountEl = document.querySelector("#highCount");
@@ -34,8 +36,18 @@ const researchCountEl = document.querySelector("#researchCount");
 const researchListEl = document.querySelector("#researchList");
 
 let snapshot = null;
+let rankedOpportunities = [];
+let detailOpportunity = null;
 let selectedSymbol = null;
 let backtest = null;
+let lastRankedRefresh = 0;
+let lastDetailRefresh = 0;
+let renderedDetailKey = null;
+let listHasNewData = false;
+let detailHasNewData = false;
+
+const RANKED_REFRESH_MS = 10000;
+const DETAIL_REFRESH_MS = 10000;
 
 function money(value) {
   return new Intl.NumberFormat("en-US", {
@@ -66,15 +78,61 @@ function decisionClass(label) {
   return "decision reject";
 }
 
+function listRefreshSeconds() {
+  const elapsed = Date.now() - lastRankedRefresh;
+  return Math.max(0, Math.ceil((RANKED_REFRESH_MS - elapsed) / 1000));
+}
+
+function resultCountText(count) {
+  if (!snapshot || rankedOpportunities.length === 0) return `${count} shown`;
+  if (listHasNewData) return `${count} shown - new data, refresh in ${listRefreshSeconds()}s`;
+  return `${count} shown - steady`;
+}
+
+function detailStatusText(item) {
+  if (!item) return "Select a ticker";
+  if (detailHasNewData) {
+    const elapsed = Date.now() - lastDetailRefresh;
+    const seconds = Math.max(0, Math.ceil((DETAIL_REFRESH_MS - elapsed) / 1000));
+    return `${item.signalDecision?.label ?? item.priority} - hold ${seconds}s`;
+  }
+  return `${item.signalDecision?.label ?? item.priority} - steady`;
+}
+
 function filteredOpportunities() {
-  if (!snapshot) return [];
+  if (!rankedOpportunities.length) return [];
   const minScore = Number(scoreFilterEl.value);
   const priority = priorityFilterEl.value;
-  return snapshot.opportunities.filter((item) => {
+  return rankedOpportunities.filter((item) => {
     const scoreMatch = item.score >= minScore;
     const priorityMatch = priority === "all" || item.priority === priority;
     return scoreMatch && priorityMatch;
   });
+}
+
+function refreshRankedList() {
+  if (!snapshot) return;
+  rankedOpportunities = snapshot.opportunities.map((item) => ({ ...item }));
+  lastRankedRefresh = Date.now();
+  listHasNewData = false;
+  if (!selectedSymbol && rankedOpportunities.length) {
+    selectedSymbol = rankedOpportunities[0].symbol;
+  }
+  renderList();
+}
+
+function latestSelectedOpportunity() {
+  if (!snapshot || !selectedSymbol) return null;
+  return snapshot.opportunities.find((candidate) => candidate.symbol === selectedSymbol) ?? null;
+}
+
+function refreshDetail() {
+  const latest = latestSelectedOpportunity();
+  if (!latest) return;
+  detailOpportunity = { ...latest };
+  lastDetailRefresh = Date.now();
+  detailHasNewData = false;
+  renderDetail(true);
 }
 
 function renderSummary() {
@@ -146,7 +204,7 @@ function renderSignalGate() {
 
 function renderList() {
   const items = filteredOpportunities();
-  resultCountEl.textContent = `${items.length} shown`;
+  resultCountEl.textContent = resultCountText(items.length);
   opportunitiesEl.innerHTML = "";
 
   for (const item of items) {
@@ -170,6 +228,7 @@ function renderList() {
     `;
     row.addEventListener("click", () => {
       selectedSymbol = item.symbol;
+      refreshDetail();
       render();
     });
     opportunitiesEl.append(row);
@@ -178,8 +237,11 @@ function renderList() {
   if (!selectedSymbol && items.length) selectedSymbol = items[0].symbol;
 }
 
-function renderDetail() {
-  const item = snapshot.opportunities.find((candidate) => candidate.symbol === selectedSymbol);
+function renderDetail(force = false) {
+  const item =
+    detailOpportunity ??
+    snapshot.opportunities.find((candidate) => candidate.symbol === selectedSymbol) ??
+    rankedOpportunities.find((candidate) => candidate.symbol === selectedSymbol);
   if (!item) {
     detailPriorityEl.textContent = "Select a ticker";
     detailEl.className = "empty-state";
@@ -187,7 +249,10 @@ function renderDetail() {
     return;
   }
 
-  detailPriorityEl.textContent = `${item.signalDecision?.label ?? item.priority} - ${item.signalDecision?.action ?? item.action}`;
+  detailPriorityEl.textContent = detailStatusText(item);
+  const detailKey = `${item.symbol}:${item.updatedAt}:${item.signalDecision?.label ?? ""}`;
+  if (!force && renderedDetailKey === detailKey) return;
+  renderedDetailKey = detailKey;
   detailEl.className = "";
   detailEl.innerHTML = `
     <div class="detail-title">
@@ -287,6 +352,8 @@ scoreFilterEl.addEventListener("input", () => {
 });
 
 priorityFilterEl.addEventListener("change", render);
+refreshListEl.addEventListener("click", refreshRankedList);
+refreshDetailEl.addEventListener("click", refreshDetail);
 
 const events = new EventSource("/events");
 events.onmessage = (event) => {
@@ -294,7 +361,29 @@ events.onmessage = (event) => {
   if (!selectedSymbol && snapshot.opportunities.length) {
     selectedSymbol = snapshot.opportunities[0].symbol;
   }
-  render();
+  const shouldRefreshList =
+    rankedOpportunities.length === 0 || Date.now() - lastRankedRefresh >= RANKED_REFRESH_MS;
+  if (shouldRefreshList) {
+    refreshRankedList();
+  } else {
+    listHasNewData = true;
+    resultCountEl.textContent = resultCountText(filteredOpportunities().length);
+  }
+  const shouldRefreshDetail =
+    !detailOpportunity ||
+    detailOpportunity.symbol !== selectedSymbol ||
+    Date.now() - lastDetailRefresh >= DETAIL_REFRESH_MS;
+  if (shouldRefreshDetail) {
+    refreshDetail();
+  } else if (latestSelectedOpportunity()) {
+    detailHasNewData = true;
+    detailPriorityEl.textContent = detailStatusText(detailOpportunity);
+  }
+  renderSummary();
+  renderSignalGate();
+  renderScan();
+  renderDetail();
+  renderLearning();
 };
 
 events.onerror = () => {

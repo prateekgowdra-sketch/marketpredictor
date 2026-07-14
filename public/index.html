@@ -118,7 +118,10 @@
         <div class="opportunity-list">
           <div class="section-heading">
             <h3>Ranked Opportunities</h3>
-            <span id="resultCount">0 shown</span>
+            <div class="list-status">
+              <span id="resultCount">0 shown</span>
+              <button id="refreshList" type="button">Refresh</button>
+            </div>
           </div>
           <div id="opportunities"></div>
         </div>
@@ -126,7 +129,10 @@
         <aside class="detail-panel">
           <div class="section-heading">
             <h3>Research Detail</h3>
-            <span id="detailPriority">Select a ticker</span>
+            <div class="list-status">
+              <span id="detailPriority">Select a ticker</span>
+              <button id="refreshDetail" type="button">Refresh</button>
+            </div>
           </div>
           <div id="detail" class="empty-state">
             The highest ranked ticker will appear here as the stream starts.

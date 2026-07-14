@@ -336,6 +336,26 @@ select {
   margin-bottom: 12px;
 }
 
+.list-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.list-status button {
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 6px 9px;
+}
+
+.list-status button:hover {
+  background: rgba(245, 158, 11, 0.2);
+}
+
 #opportunities {
   display: grid;
   gap: 10px;

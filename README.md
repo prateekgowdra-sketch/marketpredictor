@@ -34,6 +34,19 @@ The active provider is selected by `MARKET_DATA_PROVIDER`. The current default i
 MARKET_DATA_PROVIDER=mock
 ```
 
+For Alpaca paper/data mode, create `.env`:
+
+```bash
+MARKET_DATA_PROVIDER=alpaca
+ALPACA_API_KEY=your_key_here
+ALPACA_SECRET_KEY=your_secret_here
+ALPACA_PAPER=true
+ALPACA_DATA_FEED=iex
+MARKET_SYMBOLS=NVDA,AMD,TSLA,PLTR,SOFI,COIN,SMCI,RIVN,HOOD,MSTR
+```
+
+This app currently uses Alpaca for market data only. It does not place orders.
+
 Provider creation lives in `src/providers/providerFactory.js`. The mock provider lives in `src/providers/mockProvider.js`. Add a real provider such as Polygon, Alpaca, IEX Cloud, Finnhub, Nasdaq Data Link, or a broker feed behind the same provider methods:
 
 - `profiles()`

@@ -11,8 +11,13 @@ import {
 import { OutcomeTracker } from "./outcomes.js";
 
 export class MarketEngine {
-  constructor() {
-    this.provider = createMarketProvider();
+  static async create() {
+    const provider = await createMarketProvider();
+    return new MarketEngine(provider);
+  }
+
+  constructor(provider) {
+    this.provider = provider;
     this.outcomes = new OutcomeTracker();
     this.profiles = new Map();
 
@@ -28,8 +33,8 @@ export class MarketEngine {
     }
   }
 
-  next() {
-    const { tick, updates } = this.provider.nextCandles();
+  async next() {
+    const { tick, updates } = await this.provider.nextCandles();
     const opportunities = [];
     const researchEvents = [];
 

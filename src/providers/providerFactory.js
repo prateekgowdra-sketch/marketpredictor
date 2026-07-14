@@ -1,6 +1,7 @@
 import { MockMarketProvider } from "./mockProvider.js";
+import { AlpacaMarketProvider } from "./alpacaProvider.js";
 
-export function createMarketProvider() {
+export async function createMarketProvider() {
   const provider = process.env.MARKET_DATA_PROVIDER ?? "mock";
 
   if (provider === "mock") {
@@ -12,7 +13,9 @@ export function createMarketProvider() {
   }
 
   if (provider === "alpaca") {
-    throw new Error("Alpaca provider is not configured yet. Set MARKET_DATA_PROVIDER=mock or add Alpaca credentials and implement src/providers/alpacaProvider.js.");
+    const alpaca = new AlpacaMarketProvider();
+    await alpaca.init();
+    return alpaca;
   }
 
   throw new Error(`Unknown MARKET_DATA_PROVIDER: ${provider}`);

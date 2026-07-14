@@ -1,15 +1,18 @@
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { loadEnv } from "./config.js";
 import { MarketEngine } from "./marketData.js";
 import { getBacktestSummary } from "./backtest.js";
 import { getRecentSignals } from "./database.js";
 
+loadEnv();
+
 const port = Number(process.env.PORT ?? 3001);
 const publicDir = path.join(process.cwd(), "public");
-const engine = new MarketEngine();
+const engine = await MarketEngine.create();
 const clients = new Set();
-let latestSnapshot = engine.next();
+let latestSnapshot = await engine.next();
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -88,7 +91,7 @@ const server = http.createServer(async (request, response) => {
 });
 
 setInterval(async () => {
-  latestSnapshot = engine.next();
+  latestSnapshot = await engine.next();
   const payload = `data: ${JSON.stringify(latestSnapshot)}\n\n`;
   for (const client of clients) client.write(payload);
 }, 1000);

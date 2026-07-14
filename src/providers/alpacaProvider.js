@@ -44,7 +44,7 @@ export class AlpacaMarketProvider {
 
   async init() {
     const end = new Date();
-    const start = new Date(end.getTime() - 1000 * 60 * 60 * 36);
+    const start = new Date(end.getTime() - 1000 * 60 * 60 * 24 * 10);
     const params = new URLSearchParams({
       symbols: this.symbols.join(","),
       timeframe: "1Min",
@@ -56,13 +56,24 @@ export class AlpacaMarketProvider {
     });
 
     const payload = await this.request(`/v2/stocks/bars?${params}`);
+    const activeSymbols = [];
     for (const symbol of this.symbols) {
       const bars = payload.bars?.[symbol] ?? [];
       const candles = bars.map(toCandle).slice(-180);
-      if (candles.length < 30) {
-        throw new Error(`Alpaca returned too few bars for ${symbol}. Try another symbol or check your data plan/feed.`);
+      if (candles.length < 2) {
+        console.warn(`Skipping ${symbol}: Alpaca returned ${candles.length} usable bars.`);
+        continue;
       }
       this.state.set(symbol, candles);
+      activeSymbols.push(symbol);
+    }
+
+    this.symbols = activeSymbols;
+
+    if (this.symbols.length === 0) {
+      throw new Error(
+        "Alpaca did not return usable bars for any configured symbols. Check ALPACA_DATA_FEED, your plan, and whether your API key has market data access."
+      );
     }
   }
 

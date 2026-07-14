@@ -13,9 +13,19 @@ export async function createMarketProvider() {
   }
 
   if (provider === "alpaca") {
-    const alpaca = new AlpacaMarketProvider();
-    await alpaca.init();
-    return alpaca;
+    try {
+      const alpaca = new AlpacaMarketProvider();
+      await alpaca.init();
+      return alpaca;
+    } catch (error) {
+      if (process.env.ALPACA_FALLBACK_TO_MOCK === "false") {
+        throw error;
+      }
+
+      console.warn(`Alpaca provider unavailable: ${error.message}`);
+      console.warn("Falling back to mock data so the dashboard can still run.");
+      return new MockMarketProvider();
+    }
   }
 
   throw new Error(`Unknown MARKET_DATA_PROVIDER: ${provider}`);

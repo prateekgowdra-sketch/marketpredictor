@@ -54,6 +54,19 @@ SCAN_DASHBOARD_LIMIT=12
 This app currently uses Alpaca for market data only. It does not place orders.
 If Alpaca returns no usable bars, the app falls back to mock data by default so the dashboard still runs. Set `ALPACA_FALLBACK_TO_MOCK=false` if you want startup to fail loudly instead.
 
+For Polygon/Massive free-plan testing, use:
+
+```bash
+MARKET_DATA_PROVIDER=polygon
+POLYGON_API_KEY=your_key_here
+POLYGON_FALLBACK_TO_MOCK=true
+POLYGON_INIT_SYMBOL_LIMIT=5
+POLYGON_FETCH_INTERVAL_MS=60000
+MARKET_SYMBOLS=NVDA,AMD,TSLA,PLTR,SOFI,COIN,SMCI,RIVN,HOOD,MSTR
+```
+
+The free stock plan has tight call limits, so the provider only tries a small real-data seed by default and uses mock fallback for the rest. Increase `POLYGON_INIT_SYMBOL_LIMIT` only if your plan can handle the extra requests.
+
 Optional SEC research requests use `SEC_USER_AGENT`. Set it to a real contact string if you enable SEC ingestion heavily:
 
 ```bash

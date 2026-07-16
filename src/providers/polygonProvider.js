@@ -34,6 +34,9 @@ export class PolygonMarketProvider {
     this.mockProvider = new MockMarketProvider();
     this.mockSymbols = new Set();
     this.realSymbols = new Set();
+    this.rateLimitSkips = 0;
+    this.requestFailures = 0;
+    this.lastRefreshStatus = "Starting";
     this.tick = 0;
     this.lastFetchAt = 0;
     this.baseUrl = process.env.POLYGON_BASE_URL ?? "https://api.massive.com";
@@ -41,6 +44,7 @@ export class PolygonMarketProvider {
     this.fetchIntervalMs = Number(process.env.POLYGON_FETCH_INTERVAL_MS ?? 60000);
     this.initSymbolLimit = Number(process.env.POLYGON_INIT_SYMBOL_LIMIT ?? 5);
     this.rangeDays = Number(process.env.POLYGON_RANGE_DAYS ?? 10);
+    this.realTimeData = process.env.POLYGON_REALTIME_DATA === "true";
 
     if (!this.apiKey) {
       throw new Error("Missing POLYGON_API_KEY in .env.");
@@ -67,6 +71,7 @@ export class PolygonMarketProvider {
         this.state.set(symbol, candles);
         this.realSymbols.add(symbol);
         this.mockSymbols.delete(symbol);
+        this.lastRefreshStatus = `Loaded ${symbol} from Polygon`;
       } catch (error) {
         console.warn(`Using mock fallback for ${symbol}: Polygon request failed: ${error.message}`);
       }
@@ -74,6 +79,7 @@ export class PolygonMarketProvider {
 
     if (this.realSymbols.size === 0) {
       console.warn("Polygon did not return usable bars yet. Dashboard will run on mock fallback data.");
+      this.lastRefreshStatus = "Using fallback data";
     }
   }
 
@@ -83,6 +89,51 @@ export class PolygonMarketProvider {
 
   history() {
     return this.state;
+  }
+
+  dataQuality(symbol) {
+    const isReal = this.realSymbols.has(symbol);
+    if (!isReal) {
+      return {
+        symbol,
+        source: "mock",
+        tier: "fallback",
+        label: "Fallback",
+        isRealData: false,
+        isRealTimeTrusted: false,
+        note: "Polygon did not supply usable bars for this symbol; using simulation fallback."
+      };
+    }
+
+    return {
+      symbol,
+      source: "polygon",
+      tier: this.realTimeData ? "real-time" : "delayed",
+      label: this.realTimeData ? "Polygon Real-Time" : "Polygon Delayed",
+      isRealData: true,
+      isRealTimeTrusted: this.realTimeData,
+      note: this.realTimeData
+        ? "Real-time Polygon data enabled."
+        : "Real Polygon bars, but not marked as real-time day-trading data on this plan."
+    };
+  }
+
+  health() {
+    return {
+      provider: this.name,
+      trackedSymbols: this.symbols.length,
+      realSymbols: this.realSymbols.size,
+      fallbackSymbols: this.mockSymbols.size,
+      delayedSymbols: this.realTimeData ? 0 : this.realSymbols.size,
+      rateLimitSkips: this.rateLimitSkips,
+      requestFailures: this.requestFailures,
+      refreshIntervalMs: this.fetchIntervalMs,
+      initSymbolLimit: this.initSymbolLimit,
+      lastRefreshStatus: this.lastRefreshStatus,
+      note: this.realTimeData
+        ? "Polygon real-time mode is enabled by configuration."
+        : "Free/test mode: real Polygon bars are treated as delayed and not trusted for true day-trading signals."
+    };
   }
 
   ensureSymbols(symbols, profileForSymbol) {
@@ -203,9 +254,17 @@ export class PolygonMarketProvider {
     const response = await fetch(url);
     if (!response.ok) {
       const body = await response.text();
+      this.requestFailures += 1;
+      if (response.status === 429) {
+        this.rateLimitSkips += 1;
+        this.lastRefreshStatus = "Rate limited";
+      } else {
+        this.lastRefreshStatus = `Request failed ${response.status}`;
+      }
       throw new Error(`Polygon request failed ${response.status}: ${body}`);
     }
 
+    this.lastRefreshStatus = "Connected";
     return response.json();
   }
 }

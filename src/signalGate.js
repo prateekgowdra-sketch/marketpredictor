@@ -13,6 +13,8 @@ export function evaluateSignal(opportunity) {
   const expectedReturn = prediction.expectedReturn ?? 0;
   const riskScore = prediction.riskScore ?? 55;
   const catalystCount = opportunity.catalysts?.length ?? 0;
+  const dataQuality = opportunity.dataQuality ?? {};
+  const isRealTimeTrusted = dataQuality.isRealTimeTrusted === true;
   const reward = opportunity.target - opportunity.price;
   const risk = opportunity.price - opportunity.stop;
   const rewardRisk = risk > 0 ? reward / risk : 0;
@@ -25,6 +27,7 @@ export function evaluateSignal(opportunity) {
   pushBlocker(blockers, !technical.aboveVwap, "price is not holding above VWAP");
   pushBlocker(blockers, technical.relativeVolume < 1.1 && catalystCount === 0, "needs volume expansion or a catalyst");
   pushBlocker(blockers, rewardRisk < 1.15, `reward/risk only ${rewardRisk.toFixed(2)}x`);
+  pushBlocker(blockers, !isRealTimeTrusted, "not backed by trusted real-time day-trading data");
 
   const confirmations = [];
   if (opportunity.score >= 72) confirmations.push("opportunity score clears action level");
@@ -35,9 +38,16 @@ export function evaluateSignal(opportunity) {
   if (technical.relativeVolume >= 1.1) confirmations.push(`${technical.relativeVolume.toFixed(1)}x relative volume`);
   if (catalystCount > 0) confirmations.push(`${catalystCount} catalyst signal${catalystCount === 1 ? "" : "s"}`);
   if (rewardRisk >= 1.15) confirmations.push(`${rewardRisk.toFixed(2)}x reward/risk`);
+  if (isRealTimeTrusted) confirmations.push(`${dataQuality.label ?? "real-time"} data trusted`);
 
   let label = "Reject";
-  if (blockers.length <= 1 && opportunity.score >= 78 && probabilityUp >= 0.62 && riskScore <= 52) {
+  if (
+    isRealTimeTrusted &&
+    blockers.length <= 1 &&
+    opportunity.score >= 78 &&
+    probabilityUp >= 0.62 &&
+    riskScore <= 52
+  ) {
     label = "Signal";
   } else if (blockers.length <= 3 && opportunity.score >= 60) {
     label = "Watch";

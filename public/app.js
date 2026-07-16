@@ -12,6 +12,12 @@ const marketToneEl = document.querySelector("#marketTone");
 const highCountEl = document.querySelector("#highCount");
 const avgScoreEl = document.querySelector("#avgScore");
 const leadersEl = document.querySelector("#leaders");
+const dataProviderEl = document.querySelector("#dataProvider");
+const trustedDataCountEl = document.querySelector("#trustedDataCount");
+const delayedDataCountEl = document.querySelector("#delayedDataCount");
+const fallbackDataCountEl = document.querySelector("#fallbackDataCount");
+const rateLimitCountEl = document.querySelector("#rateLimitCount");
+const dataHealthNoteEl = document.querySelector("#dataHealthNote");
 const signalUpdatedEl = document.querySelector("#signalUpdated");
 const signalCountEl = document.querySelector("#signalCount");
 const watchCountEl = document.querySelector("#watchCount");
@@ -78,6 +84,12 @@ function decisionClass(label) {
   return "decision reject";
 }
 
+function dataQualityClass(tier) {
+  if (tier === "real-time" || tier === "intraday") return "data-badge trusted";
+  if (tier === "delayed") return "data-badge delayed";
+  return "data-badge fallback";
+}
+
 function listRefreshSeconds() {
   const elapsed = Date.now() - lastRankedRefresh;
   return Math.max(0, Math.ceil((RANKED_REFRESH_MS - elapsed) / 1000));
@@ -141,6 +153,23 @@ function renderSummary() {
   avgScoreEl.textContent = snapshot.summary.averageScore.toFixed(1);
   leadersEl.textContent = snapshot.summary.leadingSectors.join(", ") || "-";
   lastUpdatedEl.textContent = new Date(snapshot.generatedAt).toLocaleTimeString();
+}
+
+function renderDataHealth() {
+  const health = snapshot.dataHealth ?? {};
+  const opportunities = snapshot.opportunities ?? [];
+  const trusted = opportunities.filter((item) => item.dataQuality?.isRealTimeTrusted).length;
+  const delayed = opportunities.filter((item) => item.dataQuality?.tier === "delayed").length;
+  const fallback = opportunities.filter((item) => item.dataQuality?.tier === "fallback").length;
+
+  dataProviderEl.textContent = health.provider ? `${health.provider} provider` : "Provider unknown";
+  trustedDataCountEl.textContent = trusted;
+  delayedDataCountEl.textContent = delayed || health.delayedSymbols || 0;
+  fallbackDataCountEl.textContent = fallback || health.fallbackSymbols || 0;
+  rateLimitCountEl.textContent = health.rateLimitSkips ?? 0;
+  dataHealthNoteEl.textContent =
+    health.note ??
+    "Signals are only trusted when backed by real-time day-trading data. Fallback data is for testing.";
 }
 
 function renderScan() {
@@ -215,6 +244,7 @@ function renderList() {
       <div>
         <div class="symbol">${item.symbol}</div>
         <div class="company">${item.company}</div>
+        <span class="${dataQualityClass(item.dataQuality?.tier)}">${item.dataQuality?.label ?? "Unknown"}</span>
       </div>
       <div class="reasons">
         ${item.reasons.slice(0, 4).map((reason) => `<span class="chip">${reason}</span>`).join("")}
@@ -273,7 +303,10 @@ function renderDetail(force = false) {
       <div><span>Expected / Risk</span><strong>${item.prediction ? `${signedPct(item.prediction.expectedReturn)} / ${item.prediction.riskScore.toFixed(0)}` : "-"}</strong></div>
       <div><span>Signal Gate</span><strong>${item.signalDecision?.label ?? "-"}</strong></div>
       <div><span>Reward / Risk</span><strong>${item.signalDecision ? `${item.signalDecision.rewardRisk.toFixed(2)}x` : "-"}</strong></div>
+      <div><span>Data Source</span><strong>${item.dataQuality?.label ?? "-"}</strong></div>
+      <div><span>Trust Level</span><strong>${item.dataQuality?.isRealTimeTrusted ? "Day-trade trusted" : "Testing only"}</strong></div>
     </div>
+    <p class="data-note">${item.dataQuality?.note ?? "No data-quality note available."}</p>
     <h3>Gate Check</h3>
     <div class="gate-check">
       ${(item.signalDecision?.confirmations ?? []).map((reason) => `<span class="confirm">${reason}</span>`).join("")}
@@ -339,6 +372,7 @@ function renderLearning() {
 function render() {
   if (!snapshot) return;
   renderSummary();
+  renderDataHealth();
   renderSignalGate();
   renderScan();
   renderList();
@@ -380,6 +414,7 @@ events.onmessage = (event) => {
     detailPriorityEl.textContent = detailStatusText(detailOpportunity);
   }
   renderSummary();
+  renderDataHealth();
   renderSignalGate();
   renderScan();
   renderDetail();

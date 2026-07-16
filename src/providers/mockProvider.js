@@ -68,6 +68,32 @@ export class MockMarketProvider {
     return this.state;
   }
 
+  dataQuality(symbol) {
+    return {
+      symbol,
+      source: "mock",
+      tier: "fallback",
+      label: "Fallback",
+      isRealData: false,
+      isRealTimeTrusted: false,
+      note: "Simulation data only"
+    };
+  }
+
+  health() {
+    return {
+      provider: this.name,
+      trackedSymbols: this.state.size,
+      realSymbols: 0,
+      fallbackSymbols: this.state.size,
+      delayedSymbols: 0,
+      rateLimitSkips: 0,
+      requestFailures: 0,
+      refreshIntervalMs: 1000,
+      note: "Mock provider is for UI, scoring, and workflow testing only."
+    };
+  }
+
   ensureSymbol(symbol, profile = null) {
     if (!this.state.has(symbol)) {
       this.state.set(symbol, createInitialCandles(symbol));

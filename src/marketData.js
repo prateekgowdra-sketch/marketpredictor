@@ -76,6 +76,17 @@ export class MarketEngine {
       const events = [...providerEvents, ...researchEventsForSymbol];
       researchEvents.push(...events);
       const opportunity = scoreOpportunity(update.symbol, technical, tick, events, profile);
+      opportunity.dataQuality = this.provider.dataQuality
+        ? this.provider.dataQuality(update.symbol)
+        : {
+            symbol: update.symbol,
+            source: this.provider.name,
+            tier: "unknown",
+            label: this.provider.name,
+            isRealData: false,
+            isRealTimeTrusted: false,
+            note: "Provider does not expose data quality details."
+          };
       const features = buildFeatureVector(opportunity, events);
       const prediction = this.predictions.predict(features);
       opportunity.features = features;
@@ -133,6 +144,7 @@ export class MarketEngine {
     return {
       tick,
       provider: this.provider.name,
+      dataHealth: this.provider.health ? this.provider.health() : null,
       generatedAt: new Date().toISOString(),
       summary: summarizeMarket(opportunities),
       scan: this.latestScan,

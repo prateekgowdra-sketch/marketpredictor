@@ -29,6 +29,8 @@ export class AlpacaMarketProvider {
     this.state = new Map();
     this.mockProvider = new MockMarketProvider();
     this.mockSymbols = new Set();
+    this.realSymbols = new Set();
+    this.requestFailures = 0;
     this.tick = 0;
     this.lastFetchAt = 0;
     this.dataBaseUrl = process.env.ALPACA_DATA_BASE_URL ?? "https://data.alpaca.markets";
@@ -71,6 +73,7 @@ export class AlpacaMarketProvider {
         continue;
       }
       this.state.set(symbol, candles);
+      this.realSymbols.add(symbol);
       activeSymbols.push(symbol);
     }
 
@@ -89,6 +92,35 @@ export class AlpacaMarketProvider {
 
   history() {
     return this.state;
+  }
+
+  dataQuality(symbol) {
+    const isFallback = this.mockSymbols.has(symbol);
+    return {
+      symbol,
+      source: isFallback ? "mock" : "alpaca",
+      tier: isFallback ? "fallback" : "intraday",
+      label: isFallback ? "Fallback" : "Alpaca",
+      isRealData: !isFallback,
+      isRealTimeTrusted: !isFallback,
+      note: isFallback ? "Alpaca returned no usable bars; using simulation fallback." : `Alpaca ${this.feed} intraday feed`
+    };
+  }
+
+  health() {
+    return {
+      provider: this.name,
+      trackedSymbols: this.symbols.length,
+      realSymbols: this.realSymbols.size,
+      fallbackSymbols: this.mockSymbols.size,
+      delayedSymbols: 0,
+      rateLimitSkips: 0,
+      requestFailures: this.requestFailures,
+      refreshIntervalMs: this.fetchIntervalMs,
+      note: this.mockSymbols.size
+        ? "Some symbols are using fallback because Alpaca did not return usable market bars."
+        : "All tracked symbols are using Alpaca data."
+    };
   }
 
   ensureSymbols(symbols, profileForSymbol) {
@@ -199,6 +231,7 @@ export class AlpacaMarketProvider {
     });
 
     if (!response.ok) {
+      this.requestFailures += 1;
       const body = await response.text();
       throw new Error(`Alpaca request failed ${response.status}: ${body}`);
     }

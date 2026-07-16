@@ -66,6 +66,32 @@
         </div>
       </section>
 
+      <section class="data-health-panel">
+        <div class="section-heading">
+          <h3>Data Source Health</h3>
+          <span id="dataProvider">Checking</span>
+        </div>
+        <div class="data-health-grid">
+          <div>
+            <span>Real-Time Trusted</span>
+            <strong id="trustedDataCount">0</strong>
+          </div>
+          <div>
+            <span>Delayed Real</span>
+            <strong id="delayedDataCount">0</strong>
+          </div>
+          <div>
+            <span>Fallback</span>
+            <strong id="fallbackDataCount">0</strong>
+          </div>
+          <div>
+            <span>Rate Limits</span>
+            <strong id="rateLimitCount">0</strong>
+          </div>
+        </div>
+        <p id="dataHealthNote" class="meta">Waiting for provider status.</p>
+      </section>
+
       <section class="signal-panel">
         <div class="section-heading">
           <h3>Signal Gate</h3>

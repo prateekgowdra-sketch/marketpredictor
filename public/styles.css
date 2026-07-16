@@ -229,6 +229,36 @@ select {
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
 }
 
+.data-health-panel {
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(41, 37, 36, 0.98) 0%, rgba(30, 27, 24, 0.98) 100%);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
+}
+
+.data-health-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.data-health-grid div {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.data-health-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
 .signal-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -393,6 +423,33 @@ select {
   margin-top: 2px;
 }
 
+.data-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  margin-top: 7px;
+  padding: 4px 7px;
+}
+
+.data-badge.trusted {
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--amber-2);
+}
+
+.data-badge.delayed {
+  background: rgba(214, 211, 209, 0.08);
+  border: 1px solid rgba(214, 211, 209, 0.2);
+  color: #d6d3d1;
+}
+
+.data-badge.fallback {
+  background: rgba(120, 113, 108, 0.14);
+  border: 1px solid rgba(120, 113, 108, 0.26);
+  color: var(--muted);
+}
+
 .reasons {
   display: flex;
   flex-wrap: wrap;
@@ -520,6 +577,13 @@ select {
   color: #d6d3d1;
 }
 
+.data-note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: -4px 0 14px;
+}
+
 .gate-check {
   display: flex;
   flex-wrap: wrap;
@@ -644,6 +708,7 @@ select {
 
   .workspace,
   .metrics,
+  .data-health-grid,
   .signal-grid,
   .paper-trades,
   .scan-metrics,

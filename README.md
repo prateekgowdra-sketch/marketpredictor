@@ -67,7 +67,24 @@ MARKET_SYMBOLS=NVDA,AMD,TSLA,PLTR,SOFI,COIN,SMCI,RIVN,HOOD,MSTR
 
 The free stock plan has tight call limits, so the provider only tries a small real-data seed by default and uses mock fallback for the rest. Increase `POLYGON_INIT_SYMBOL_LIMIT` only if your plan can handle the extra requests.
 
-Optional SEC research requests use `SEC_USER_AGENT`. Set it to a real contact string if you enable SEC ingestion heavily:
+## Catalyst Research
+
+The research engine can pull real catalyst context from Polygon/Massive news, SEC EDGAR filings, and optional Finnhub earnings calendar data:
+
+```bash
+ENABLE_POLYGON_NEWS=true
+POLYGON_NEWS_SYMBOL_LIMIT=5
+POLYGON_NEWS_CACHE_MS=1200000
+ENABLE_SEC_INGESTION=true
+SEC_USER_AGENT="Market Predictor personal research your-email@example.com"
+ENABLE_FINNHUB_EARNINGS=true
+FINNHUB_API_KEY=your_finnhub_key_here
+FINNHUB_EARNINGS_SYMBOL_LIMIT=10
+```
+
+Polygon news uses the same `POLYGON_API_KEY`. Finnhub earnings is optional; if `FINNHUB_API_KEY` is missing, the app simply skips earnings events. The signal gate only allows true paper-trade `Signal` entries when both trusted real-time market data and at least one real catalyst source are present.
+
+SEC research requests use `SEC_USER_AGENT`. Set it to a real contact string if you enable SEC ingestion heavily:
 
 ```bash
 ENABLE_SEC_INGESTION=true

@@ -28,6 +28,8 @@ export class PaperTrader {
     for (const opportunity of opportunities) {
       if (this.openTrades.size >= this.maxOpenTrades) break;
       if (opportunity.signalDecision?.label !== "Signal") continue;
+      if (!opportunity.dataQuality?.isRealTimeTrusted) continue;
+      if (!opportunity.researchSummary?.hasRealCatalyst) continue;
       if (this.openTrades.has(opportunity.symbol)) continue;
       this.openTrade(opportunity);
     }

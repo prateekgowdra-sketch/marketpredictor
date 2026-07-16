@@ -90,6 +90,13 @@ function dataQualityClass(tier) {
   return "data-badge fallback";
 }
 
+function catalystClass(impact) {
+  if (impact === "Bullish") return "catalyst-badge bullish";
+  if (impact === "Bearish") return "catalyst-badge bearish";
+  if (impact === "Volatility") return "catalyst-badge volatility";
+  return "catalyst-badge unknown";
+}
+
 function listRefreshSeconds() {
   const elapsed = Date.now() - lastRankedRefresh;
   return Math.max(0, Math.ceil((RANKED_REFRESH_MS - elapsed) / 1000));
@@ -245,6 +252,7 @@ function renderList() {
         <div class="symbol">${item.symbol}</div>
         <div class="company">${item.company}</div>
         <span class="${dataQualityClass(item.dataQuality?.tier)}">${item.dataQuality?.label ?? "Unknown"}</span>
+        <span class="${catalystClass(item.researchSummary?.impact)}">${item.researchSummary?.impact ?? "No Catalyst"}</span>
       </div>
       <div class="reasons">
         ${item.reasons.slice(0, 4).map((reason) => `<span class="chip">${reason}</span>`).join("")}
@@ -305,8 +313,46 @@ function renderDetail(force = false) {
       <div><span>Reward / Risk</span><strong>${item.signalDecision ? `${item.signalDecision.rewardRisk.toFixed(2)}x` : "-"}</strong></div>
       <div><span>Data Source</span><strong>${item.dataQuality?.label ?? "-"}</strong></div>
       <div><span>Trust Level</span><strong>${item.dataQuality?.isRealTimeTrusted ? "Day-trade trusted" : "Testing only"}</strong></div>
+      <div><span>Catalyst Impact</span><strong>${item.researchSummary?.impact ?? "-"}</strong></div>
+      <div><span>Real Sources</span><strong>${item.researchSummary?.realCatalystCount ?? 0}</strong></div>
     </div>
     <p class="data-note">${item.dataQuality?.note ?? "No data-quality note available."}</p>
+    <h3>Catalyst Research</h3>
+    <div class="catalyst-card">
+      <div>
+        <span>Top Catalyst</span>
+        <strong>${item.researchSummary?.topCatalyst?.title ?? "No real catalyst found yet"}</strong>
+      </div>
+      <div>
+        <span>Likely Impact</span>
+        <strong>${item.researchSummary?.impact ?? "Unknown"} - ${item.researchSummary?.topCatalyst?.horizon ?? "unknown"}</strong>
+      </div>
+      <div>
+        <span>Confidence</span>
+        <strong>${(item.researchSummary?.confidence ?? 0).toFixed(0)}%</strong>
+      </div>
+      <p>${item.researchSummary?.whyItMatters ?? "No current real catalyst found yet."}</p>
+      <p class="meta">${item.researchSummary?.risk ?? "Catalyst risk unavailable."}</p>
+    </div>
+    <div class="catalyst-list">
+      ${(item.researchSummary?.events ?? [])
+        .map(
+          (event) => `
+            <div class="catalyst-item">
+              <div>
+                <strong>${event.impact} ${event.type}</strong>
+                <span>${event.title}</span>
+              </div>
+              ${
+                event.url
+                  ? `<a href="${event.url}" target="_blank" rel="noreferrer">Source</a>`
+                  : `<span class="meta">No link</span>`
+              }
+            </div>
+          `
+        )
+        .join("")}
+    </div>
     <h3>Gate Check</h3>
     <div class="gate-check">
       ${(item.signalDecision?.confirmations ?? []).map((reason) => `<span class="confirm">${reason}</span>`).join("")}

@@ -14,7 +14,9 @@ export function evaluateSignal(opportunity) {
   const riskScore = prediction.riskScore ?? 55;
   const catalystCount = opportunity.catalysts?.length ?? 0;
   const dataQuality = opportunity.dataQuality ?? {};
+  const researchSummary = opportunity.researchSummary ?? {};
   const isRealTimeTrusted = dataQuality.isRealTimeTrusted === true;
+  const hasRealCatalyst = researchSummary.hasRealCatalyst === true;
   const reward = opportunity.target - opportunity.price;
   const risk = opportunity.price - opportunity.stop;
   const rewardRisk = risk > 0 ? reward / risk : 0;
@@ -28,6 +30,7 @@ export function evaluateSignal(opportunity) {
   pushBlocker(blockers, technical.relativeVolume < 1.1 && catalystCount === 0, "needs volume expansion or a catalyst");
   pushBlocker(blockers, rewardRisk < 1.15, `reward/risk only ${rewardRisk.toFixed(2)}x`);
   pushBlocker(blockers, !isRealTimeTrusted, "not backed by trusted real-time day-trading data");
+  pushBlocker(blockers, !hasRealCatalyst, "no real catalyst source found yet");
 
   const confirmations = [];
   if (opportunity.score >= 72) confirmations.push("opportunity score clears action level");
@@ -39,10 +42,12 @@ export function evaluateSignal(opportunity) {
   if (catalystCount > 0) confirmations.push(`${catalystCount} catalyst signal${catalystCount === 1 ? "" : "s"}`);
   if (rewardRisk >= 1.15) confirmations.push(`${rewardRisk.toFixed(2)}x reward/risk`);
   if (isRealTimeTrusted) confirmations.push(`${dataQuality.label ?? "real-time"} data trusted`);
+  if (hasRealCatalyst) confirmations.push(`${researchSummary.realCatalystCount} real catalyst source${researchSummary.realCatalystCount === 1 ? "" : "s"}`);
 
   let label = "Reject";
   if (
     isRealTimeTrusted &&
+    hasRealCatalyst &&
     blockers.length <= 1 &&
     opportunity.score >= 78 &&
     probabilityUp >= 0.62 &&

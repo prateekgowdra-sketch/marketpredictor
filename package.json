@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node src/server.js",
     "start": "node src/server.js",
-    "check": "node --check src/server.js && node --check src/marketData.js && node --check src/researchEngine.js && node --check src/technicalIndicators.js && node --check src/database.js && node --check src/backtest.js && node --check src/config.js && node --check src/providers/alpacaProvider.js && node --check src/providers/polygonProvider.js && node --check src/features.js && node --check src/mlModel.js && node --check src/researchIngestion.js && node --check src/universeScanner.js && node --check src/signalGate.js && node --check src/paperTrader.js"
+    "check": "node --check src/server.js && node --check src/marketData.js && node --check src/researchEngine.js && node --check src/technicalIndicators.js && node --check src/database.js && node --check src/backtest.js && node --check src/config.js && node --check src/providers/alpacaProvider.js && node --check src/providers/polygonProvider.js && node --check src/features.js && node --check src/mlModel.js && node --check src/researchIngestion.js && node --check src/catalystScoring.js && node --check src/universeScanner.js && node --check src/signalGate.js && node --check src/paperTrader.js"
   },
   "engines": {
     "node": ">=20"

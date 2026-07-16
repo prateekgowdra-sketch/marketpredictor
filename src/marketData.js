@@ -11,6 +11,7 @@ import {
 } from "./database.js";
 import { OutcomeTracker } from "./outcomes.js";
 import { ResearchIngestion } from "./researchIngestion.js";
+import { buildCatalystSummary } from "./catalystScoring.js";
 import { buildFeatureVector } from "./features.js";
 import { PredictionEngine } from "./mlModel.js";
 import { PaperTrader } from "./paperTrader.js";
@@ -76,6 +77,7 @@ export class MarketEngine {
       const events = [...providerEvents, ...researchEventsForSymbol];
       researchEvents.push(...events);
       const opportunity = scoreOpportunity(update.symbol, technical, tick, events, profile);
+      opportunity.researchSummary = buildCatalystSummary(update.symbol, events);
       opportunity.dataQuality = this.provider.dataQuality
         ? this.provider.dataQuality(update.symbol)
         : {
@@ -123,7 +125,8 @@ export class MarketEngine {
         explanation: {
           reasons: opportunity.reasons,
           modelMode: opportunity.prediction.metrics.mode,
-          catalystCount: opportunity.catalysts.length
+          catalystCount: opportunity.catalysts.length,
+          researchSummary: opportunity.researchSummary
         }
       });
 

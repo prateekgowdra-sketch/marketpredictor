@@ -163,8 +163,8 @@ const statements = {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `),
   insertResearchEvent: db.prepare(`
-    INSERT INTO research_events (symbol, ts, provider, event_type, title, strength, url, raw_json)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO research_events (symbol, ts, provider, event_type, title, strength, url, raw_json, sentiment)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   insertSignal: db.prepare(`
     INSERT INTO signals (
@@ -330,9 +330,10 @@ export function saveResearchEvents(events) {
         event.provider,
       event.type,
       event.title,
-      event.strength,
-      event.url ?? null,
-        JSON.stringify(event.raw ?? {})
+        event.strength,
+        event.url ?? null,
+        JSON.stringify(event.raw ?? {}),
+        event.sentiment ?? event.raw?.sentimentScore ?? 0
       );
     }
     db.exec("COMMIT");

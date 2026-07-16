@@ -450,6 +450,34 @@ select {
   color: var(--muted);
 }
 
+.catalyst-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  margin-top: 5px;
+  padding: 4px 7px;
+}
+
+.catalyst-badge.bullish {
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--amber-2);
+}
+
+.catalyst-badge.bearish {
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  color: #fdba74;
+}
+
+.catalyst-badge.volatility,
+.catalyst-badge.unknown {
+  background: rgba(214, 211, 209, 0.08);
+  border: 1px solid rgba(214, 211, 209, 0.2);
+  color: #d6d3d1;
+}
+
 .reasons {
   display: flex;
   flex-wrap: wrap;
@@ -582,6 +610,53 @@ select {
   font-size: 13px;
   line-height: 1.45;
   margin: -4px 0 14px;
+}
+
+.catalyst-card {
+  border: 1px solid var(--line);
+  background: var(--panel-3);
+  border-radius: 8px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+
+.catalyst-card span,
+.catalyst-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.catalyst-card p {
+  color: #d6d3d1;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.catalyst-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.catalyst-item {
+  border: 1px solid var(--line);
+  background: rgba(51, 47, 44, 0.6);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.catalyst-item a {
+  color: var(--amber-2);
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 .gate-check {

@@ -23,6 +23,10 @@ const cikBySymbol = {
   MSTR: "0001050446"
 };
 
+function dateOnly(date) {
+  return date.toISOString().slice(0, 10);
+}
+
 function seedFor(symbol, tick) {
   return [...symbol].reduce((sum, char) => sum + char.charCodeAt(0), tick * 17);
 }
@@ -35,6 +39,8 @@ function event(symbol, provider, type, title, strength, raw = {}) {
     type,
     title,
     strength,
+    sentiment: raw.sentimentScore ?? 0,
+    url: raw.url ?? null,
     raw
   };
 }
@@ -44,7 +50,15 @@ export class ResearchIngestion {
     this.name = "research-engine";
     this.lastTickBySymbol = new Map();
     this.secCache = new Map();
-    this.secTtlMs = 1000 * 60 * 10;
+    this.newsCache = new Map();
+    this.earningsCache = new Map();
+    this.secTtlMs = Number(process.env.SEC_CACHE_MS ?? 1000 * 60 * 30);
+    this.newsTtlMs = Number(process.env.POLYGON_NEWS_CACHE_MS ?? 1000 * 60 * 20);
+    this.earningsTtlMs = Number(process.env.FINNHUB_EARNINGS_CACHE_MS ?? 1000 * 60 * 60 * 6);
+    this.newsSymbolLimit = Number(process.env.POLYGON_NEWS_SYMBOL_LIMIT ?? 5);
+    this.earningsSymbolLimit = Number(process.env.FINNHUB_EARNINGS_SYMBOL_LIMIT ?? 10);
+    this.newsRequests = 0;
+    this.earningsRequests = 0;
   }
 
   async eventsFor({ symbol, profile, technical, tick }) {
@@ -86,12 +100,14 @@ export class ResearchIngestion {
 
     const secEvent = await this.latestSecFilingEvent(symbol);
     if (secEvent) events.push(secEvent);
+    events.push(...(await this.latestPolygonNewsEvents(symbol)));
+    events.push(...(await this.latestFinnhubEarningsEvents(symbol)));
 
     return events;
   }
 
   async latestSecFilingEvent(symbol) {
-    if (process.env.ENABLE_SEC_INGESTION !== "true") return null;
+    if (process.env.ENABLE_SEC_INGESTION === "false") return null;
     const cik = cikBySymbol[symbol];
     if (!cik) return null;
 
@@ -133,13 +149,124 @@ export class ResearchIngestion {
       const secEvent = event(symbol, "sec", "sec", `${symbol} recent ${form} filed ${filingDate}`, strength, {
         form,
         filingDate,
-        accession
+        accession,
+        realCatalyst: true,
+        url: accession
+          ? `https://www.sec.gov/Archives/edgar/data/${Number(cik)}/${accession.replaceAll("-", "")}/${accession}-index.html`
+          : null
       });
       this.secCache.set(symbol, { fetchedAt: Date.now(), event: secEvent });
       return secEvent;
     } catch {
       this.secCache.set(symbol, { fetchedAt: Date.now(), event: null });
       return null;
+    }
+  }
+
+  async latestPolygonNewsEvents(symbol) {
+    if (process.env.ENABLE_POLYGON_NEWS === "false") return [];
+    if (!process.env.POLYGON_API_KEY) return [];
+
+    const cached = this.newsCache.get(symbol);
+    if (cached && Date.now() - cached.fetchedAt < this.newsTtlMs) {
+      return cached.events;
+    }
+
+    if (!cached && this.newsRequests >= this.newsSymbolLimit) {
+      this.newsCache.set(symbol, { fetchedAt: Date.now(), events: [] });
+      return [];
+    }
+
+    try {
+      this.newsRequests += 1;
+      const url = new URL("/v2/reference/news", process.env.POLYGON_BASE_URL ?? "https://api.massive.com");
+      url.searchParams.set("ticker", symbol);
+      url.searchParams.set("limit", process.env.POLYGON_NEWS_LIMIT ?? "3");
+      url.searchParams.set("order", "desc");
+      url.searchParams.set("sort", "published_utc");
+      url.searchParams.set("apiKey", process.env.POLYGON_API_KEY);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        this.newsCache.set(symbol, { fetchedAt: Date.now(), events: [] });
+        return [];
+      }
+
+      const payload = await response.json();
+      const events = (payload.results ?? []).slice(0, 3).map((article) => {
+        const insight = (article.insights ?? []).find((item) => item.ticker === symbol) ?? article.insights?.[0] ?? {};
+        const sentiment = insight.sentiment;
+        const strength = sentiment === "positive" || sentiment === "negative" ? 18 : 12;
+        return event(symbol, "polygon-news", "news", article.title, strength, {
+          description: article.description,
+          publisher: article.publisher?.name,
+          publishedAt: article.published_utc,
+          sentiment,
+          sentimentScore: sentiment === "positive" ? 0.7 : sentiment === "negative" ? -0.7 : 0,
+          tickers: article.tickers,
+          realCatalyst: true,
+          url: article.article_url
+        });
+      });
+      this.newsCache.set(symbol, { fetchedAt: Date.now(), events });
+      return events;
+    } catch {
+      this.newsCache.set(symbol, { fetchedAt: Date.now(), events: [] });
+      return [];
+    }
+  }
+
+  async latestFinnhubEarningsEvents(symbol) {
+    if (process.env.ENABLE_FINNHUB_EARNINGS === "false") return [];
+    if (!process.env.FINNHUB_API_KEY) return [];
+
+    const cached = this.earningsCache.get(symbol);
+    if (cached && Date.now() - cached.fetchedAt < this.earningsTtlMs) {
+      return cached.events;
+    }
+
+    if (!cached && this.earningsRequests >= this.earningsSymbolLimit) {
+      this.earningsCache.set(symbol, { fetchedAt: Date.now(), events: [] });
+      return [];
+    }
+
+    try {
+      this.earningsRequests += 1;
+      const from = new Date();
+      const to = new Date(from.getTime() + 1000 * 60 * 60 * 24 * 21);
+      const url = new URL("/api/v1/calendar/earnings", "https://finnhub.io");
+      url.searchParams.set("from", dateOnly(from));
+      url.searchParams.set("to", dateOnly(to));
+      url.searchParams.set("symbol", symbol);
+      url.searchParams.set("token", process.env.FINNHUB_API_KEY);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        this.earningsCache.set(symbol, { fetchedAt: Date.now(), events: [] });
+        return [];
+      }
+
+      const payload = await response.json();
+      const events = (payload.earningsCalendar ?? []).slice(0, 2).map((item) => {
+        const earningsDate = new Date(`${item.date}T12:00:00Z`);
+        const daysUntil = Math.ceil((earningsDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        return event(symbol, "finnhub", "earnings", `${symbol} earnings ${item.date} ${item.hour ?? ""}`.trim(), 16, {
+          date: item.date,
+          daysUntil,
+          hour: item.hour,
+          quarter: item.quarter,
+          year: item.year,
+          epsEstimate: item.epsEstimate,
+          revenueEstimate: item.revenueEstimate,
+          realCatalyst: true,
+          url: "https://finnhub.io/calendar/earnings"
+        });
+      });
+      this.earningsCache.set(symbol, { fetchedAt: Date.now(), events });
+      return events;
+    } catch {
+      this.earningsCache.set(symbol, { fetchedAt: Date.now(), events: [] });
+      return [];
     }
   }
 }

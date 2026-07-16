@@ -78,6 +78,11 @@ export function buildTechnicalSnapshot(candles) {
   const currentAtr = atr(candles);
   const currentVwap = vwap(candles);
   const recentHigh = Math.max(...candles.slice(-30).map((candle) => candle.high));
+  const recentLow = Math.min(...candles.slice(-30).map((candle) => candle.low));
+  const openingRange = candles.slice(0, Math.min(15, candles.length));
+  const openingRangeHigh = Math.max(...openingRange.map((candle) => candle.high));
+  const openingRangeLow = Math.min(...openingRange.map((candle) => candle.low));
+  const sessionOpen = candles[0]?.open ?? last.open;
   const relativeVolume = avgVolume ? last.volume / avgVolume : 1;
   const priceChange = previous ? (last.close - previous.close) / previous.close : 0;
   const breakoutPressure = recentHigh ? last.close / recentHigh : 1;
@@ -93,6 +98,12 @@ export function buildTechnicalSnapshot(candles) {
     ma50,
     relativeVolume,
     breakoutPressure,
+    recentHigh,
+    recentLow,
+    openingRangeHigh,
+    openingRangeLow,
+    sessionOpen,
+    sessionGapPct: sessionOpen ? (last.close - sessionOpen) / sessionOpen : 0,
     aboveVwap: currentVwap ? last.close > currentVwap : false,
     trendUp: ma20 !== null && ma50 !== null ? ma20 > ma50 : false,
     volatilityPct: currentAtr ? currentAtr / last.close : 0

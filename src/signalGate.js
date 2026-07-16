@@ -15,11 +15,12 @@ export function evaluateSignal(opportunity) {
   const catalystCount = opportunity.catalysts?.length ?? 0;
   const dataQuality = opportunity.dataQuality ?? {};
   const researchSummary = opportunity.researchSummary ?? {};
+  const setup = opportunity.dayTradeSetup ?? {};
   const isRealTimeTrusted = dataQuality.isRealTimeTrusted === true;
   const hasRealCatalyst = researchSummary.hasRealCatalyst === true;
   const reward = opportunity.target - opportunity.price;
   const risk = opportunity.price - opportunity.stop;
-  const rewardRisk = risk > 0 ? reward / risk : 0;
+  const rewardRisk = setup.rewardRisk ?? (risk > 0 ? reward / risk : 0);
   const blockers = [];
 
   pushBlocker(blockers, opportunity.score < 72, "score below action threshold");
@@ -31,6 +32,7 @@ export function evaluateSignal(opportunity) {
   pushBlocker(blockers, rewardRisk < 1.15, `reward/risk only ${rewardRisk.toFixed(2)}x`);
   pushBlocker(blockers, !isRealTimeTrusted, "not backed by trusted real-time day-trading data");
   pushBlocker(blockers, !hasRealCatalyst, "no real catalyst source found yet");
+  pushBlocker(blockers, (setup.quality ?? 0) < 65, `day-trade setup quality only ${(setup.quality ?? 0).toFixed(0)}`);
 
   const confirmations = [];
   if (opportunity.score >= 72) confirmations.push("opportunity score clears action level");
@@ -43,12 +45,14 @@ export function evaluateSignal(opportunity) {
   if (rewardRisk >= 1.15) confirmations.push(`${rewardRisk.toFixed(2)}x reward/risk`);
   if (isRealTimeTrusted) confirmations.push(`${dataQuality.label ?? "real-time"} data trusted`);
   if (hasRealCatalyst) confirmations.push(`${researchSummary.realCatalystCount} real catalyst source${researchSummary.realCatalystCount === 1 ? "" : "s"}`);
+  if ((setup.quality ?? 0) >= 65) confirmations.push(`${setup.type} setup quality ${(setup.quality ?? 0).toFixed(0)}`);
 
   let label = "Reject";
   if (
     isRealTimeTrusted &&
     hasRealCatalyst &&
     blockers.length <= 1 &&
+    (setup.quality ?? 0) >= 65 &&
     opportunity.score >= 78 &&
     probabilityUp >= 0.62 &&
     riskScore <= 52

@@ -97,6 +97,14 @@ function catalystClass(impact) {
   return "catalyst-badge unknown";
 }
 
+function setupClass(type) {
+  if (!type || type === "No Clean Day-Trade Setup") return "setup-badge none";
+  if (type.includes("VWAP")) return "setup-badge vwap";
+  if (type.includes("Opening") || type.includes("Gap")) return "setup-badge breakout";
+  if (type.includes("Momentum")) return "setup-badge momentum";
+  return "setup-badge caution";
+}
+
 function listRefreshSeconds() {
   const elapsed = Date.now() - lastRankedRefresh;
   return Math.max(0, Math.ceil((RANKED_REFRESH_MS - elapsed) / 1000));
@@ -253,6 +261,7 @@ function renderList() {
         <div class="company">${item.company}</div>
         <span class="${dataQualityClass(item.dataQuality?.tier)}">${item.dataQuality?.label ?? "Unknown"}</span>
         <span class="${catalystClass(item.researchSummary?.impact)}">${item.researchSummary?.impact ?? "No Catalyst"}</span>
+        <span class="${setupClass(item.dayTradeSetup?.type)}">${item.dayTradeSetup?.type ?? "No Setup"}</span>
       </div>
       <div class="reasons">
         ${item.reasons.slice(0, 4).map((reason) => `<span class="chip">${reason}</span>`).join("")}
@@ -315,8 +324,29 @@ function renderDetail(force = false) {
       <div><span>Trust Level</span><strong>${item.dataQuality?.isRealTimeTrusted ? "Day-trade trusted" : "Testing only"}</strong></div>
       <div><span>Catalyst Impact</span><strong>${item.researchSummary?.impact ?? "-"}</strong></div>
       <div><span>Real Sources</span><strong>${item.researchSummary?.realCatalystCount ?? 0}</strong></div>
+      <div><span>Day Setup</span><strong>${item.dayTradeSetup?.type ?? "-"}</strong></div>
+      <div><span>Setup Quality</span><strong>${(item.dayTradeSetup?.quality ?? 0).toFixed(0)}</strong></div>
     </div>
     <p class="data-note">${item.dataQuality?.note ?? "No data-quality note available."}</p>
+    <h3>Day-Trade Setup</h3>
+    <div class="setup-card">
+      <div>
+        <span>Pattern</span>
+        <strong>${item.dayTradeSetup?.type ?? "No Clean Day-Trade Setup"} - ${item.dayTradeSetup?.direction ?? "Wait"}</strong>
+      </div>
+      <div>
+        <span>Trigger</span>
+        <strong>${item.dayTradeSetup?.trigger ?? "Wait for confirmation"}</strong>
+      </div>
+      <div class="setup-levels">
+        <div><span>Entry</span><strong>${money(item.dayTradeSetup?.entry ?? item.entryZone[1])}</strong></div>
+        <div><span>Stop</span><strong>${money(item.dayTradeSetup?.stop ?? item.stop)}</strong></div>
+        <div><span>Target</span><strong>${money(item.dayTradeSetup?.target ?? item.target)}</strong></div>
+        <div><span>R/R</span><strong>${(item.dayTradeSetup?.rewardRisk ?? 0).toFixed(2)}x</strong></div>
+      </div>
+      <p>${(item.dayTradeSetup?.reasons ?? []).join(" - ")}</p>
+      <p class="meta">Invalidation: ${item.dayTradeSetup?.invalidation ?? "No trade until a clean setup appears."}</p>
+    </div>
     <h3>Catalyst Research</h3>
     <div class="catalyst-card">
       <div>

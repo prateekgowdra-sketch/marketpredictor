@@ -19,6 +19,7 @@ const publicDir = path.join(process.cwd(), "public");
 const engine = await MarketEngine.create();
 const clients = new Set();
 let latestSnapshot = await engine.next();
+let updateInFlight = false;
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -136,9 +137,17 @@ const server = http.createServer(async (request, response) => {
 });
 
 setInterval(async () => {
-  latestSnapshot = await engine.next();
-  const payload = `data: ${JSON.stringify(latestSnapshot)}\n\n`;
-  for (const client of clients) client.write(payload);
+  if (updateInFlight) return;
+  updateInFlight = true;
+  try {
+    latestSnapshot = await engine.next();
+    const payload = `data: ${JSON.stringify(latestSnapshot)}\n\n`;
+    for (const client of clients) client.write(payload);
+  } catch (error) {
+    console.error(`Market update skipped: ${error.message}`);
+  } finally {
+    updateInFlight = false;
+  }
 }, 1000);
 
 server.listen(port, () => {

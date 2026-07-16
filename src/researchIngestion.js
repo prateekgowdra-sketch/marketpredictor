@@ -45,6 +45,17 @@ function event(symbol, provider, type, title, strength, raw = {}) {
   };
 }
 
+async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 2500) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export class ResearchIngestion {
   constructor() {
     this.name = "research-engine";
@@ -57,6 +68,9 @@ export class ResearchIngestion {
     this.earningsTtlMs = Number(process.env.FINNHUB_EARNINGS_CACHE_MS ?? 1000 * 60 * 60 * 6);
     this.newsSymbolLimit = Number(process.env.POLYGON_NEWS_SYMBOL_LIMIT ?? 5);
     this.earningsSymbolLimit = Number(process.env.FINNHUB_EARNINGS_SYMBOL_LIMIT ?? 10);
+    this.secSymbolLimit = Number(process.env.SEC_SYMBOL_LIMIT ?? 5);
+    this.requestTimeoutMs = Number(process.env.RESEARCH_REQUEST_TIMEOUT_MS ?? 2500);
+    this.secRequests = 0;
     this.newsRequests = 0;
     this.earningsRequests = 0;
   }
@@ -116,13 +130,19 @@ export class ResearchIngestion {
       return cached.event;
     }
 
+    if (!cached && this.secRequests >= this.secSymbolLimit) {
+      this.secCache.set(symbol, { fetchedAt: Date.now(), event: null });
+      return null;
+    }
+
     try {
-      const response = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
+      this.secRequests += 1;
+      const response = await fetchJsonWithTimeout(`https://data.sec.gov/submissions/CIK${cik}.json`, {
         headers: {
           "User-Agent": process.env.SEC_USER_AGENT ?? "Market Predictor personal research contact@example.com",
           Accept: "application/json"
         }
-      });
+      }, this.requestTimeoutMs);
 
       if (!response.ok) {
         this.secCache.set(symbol, { fetchedAt: Date.now(), event: null });
@@ -186,7 +206,7 @@ export class ResearchIngestion {
       url.searchParams.set("sort", "published_utc");
       url.searchParams.set("apiKey", process.env.POLYGON_API_KEY);
 
-      const response = await fetch(url);
+      const response = await fetchJsonWithTimeout(url, {}, this.requestTimeoutMs);
       if (!response.ok) {
         this.newsCache.set(symbol, { fetchedAt: Date.now(), events: [] });
         return [];
@@ -240,7 +260,7 @@ export class ResearchIngestion {
       url.searchParams.set("symbol", symbol);
       url.searchParams.set("token", process.env.FINNHUB_API_KEY);
 
-      const response = await fetch(url);
+      const response = await fetchJsonWithTimeout(url, {}, this.requestTimeoutMs);
       if (!response.ok) {
         this.earningsCache.set(symbol, { fetchedAt: Date.now(), events: [] });
         return [];

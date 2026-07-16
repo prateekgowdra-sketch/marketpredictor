@@ -12,6 +12,7 @@ import {
 import { OutcomeTracker } from "./outcomes.js";
 import { ResearchIngestion } from "./researchIngestion.js";
 import { buildCatalystSummary } from "./catalystScoring.js";
+import { detectDayTradingSetup } from "./setupDetector.js";
 import { buildFeatureVector } from "./features.js";
 import { PredictionEngine } from "./mlModel.js";
 import { PaperTrader } from "./paperTrader.js";
@@ -78,6 +79,21 @@ export class MarketEngine {
       researchEvents.push(...events);
       const opportunity = scoreOpportunity(update.symbol, technical, tick, events, profile);
       opportunity.researchSummary = buildCatalystSummary(update.symbol, events);
+      opportunity.dayTradeSetup = detectDayTradingSetup(update.candles, technical, opportunity);
+      if (opportunity.dayTradeSetup.type !== "No Clean Day-Trade Setup") {
+        opportunity.entryZone = [
+          opportunity.dayTradeSetup.entry * 0.998,
+          opportunity.dayTradeSetup.entry * 1.002
+        ];
+        opportunity.stop = opportunity.dayTradeSetup.stop;
+        opportunity.target = opportunity.dayTradeSetup.target;
+        opportunity.action = opportunity.dayTradeSetup.direction === "Long" ? "Day Trade Setup" : "Short Watch";
+        opportunity.reasons = [
+          opportunity.dayTradeSetup.type,
+          ...opportunity.dayTradeSetup.reasons,
+          ...opportunity.reasons
+        ].slice(0, 6);
+      }
       opportunity.dataQuality = this.provider.dataQuality
         ? this.provider.dataQuality(update.symbol)
         : {
@@ -126,7 +142,8 @@ export class MarketEngine {
           reasons: opportunity.reasons,
           modelMode: opportunity.prediction.metrics.mode,
           catalystCount: opportunity.catalysts.length,
-          researchSummary: opportunity.researchSummary
+          researchSummary: opportunity.researchSummary,
+          dayTradeSetup: opportunity.dayTradeSetup
         }
       });
 

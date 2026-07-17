@@ -18,7 +18,9 @@ const defaults = {
   minSimulationRewardRisk: 1.8,
   minSimulationProbability: 0.64,
   maxSimulationRiskScore: 48,
-  maxSimulationMovePct: 0.12
+  maxSimulationMovePct: 0.12,
+  maxDailyLosses: 3,
+  maxDailyDrawdownPct: 0.08
 };
 
 function toNumber(value, fallback, min, max) {
@@ -57,7 +59,9 @@ function normalizeControls(input = {}) {
       1
     ),
     maxSimulationRiskScore: toNumber(input.maxSimulationRiskScore, defaults.maxSimulationRiskScore, 0, defaults.maxSimulationRiskScore),
-    maxSimulationMovePct: toNumber(input.maxSimulationMovePct, defaults.maxSimulationMovePct, 0.01, defaults.maxSimulationMovePct)
+    maxSimulationMovePct: toNumber(input.maxSimulationMovePct, defaults.maxSimulationMovePct, 0.01, defaults.maxSimulationMovePct),
+    maxDailyLosses: Math.round(toNumber(input.maxDailyLosses, defaults.maxDailyLosses, 1, 50)),
+    maxDailyDrawdownPct: toNumber(input.maxDailyDrawdownPct, defaults.maxDailyDrawdownPct, 0.005, 0.5)
   };
 }
 
@@ -96,6 +100,8 @@ export function paperControlsEnv(controls = getPaperControls()) {
     PAPER_SIM_MIN_REWARD_RISK: String(controls.minSimulationRewardRisk),
     PAPER_SIM_MIN_PROBABILITY: String(controls.minSimulationProbability),
     PAPER_SIM_MAX_RISK_SCORE: String(controls.maxSimulationRiskScore),
-    PAPER_SIM_MAX_MOVE_PCT: String(controls.maxSimulationMovePct)
+    PAPER_SIM_MAX_MOVE_PCT: String(controls.maxSimulationMovePct),
+    PAPER_MAX_DAILY_LOSSES: String(controls.maxDailyLosses),
+    PAPER_MAX_DAILY_DRAWDOWN_PCT: String(controls.maxDailyDrawdownPct)
   };
 }

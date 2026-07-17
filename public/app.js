@@ -451,7 +451,7 @@ function renderPaperControls(controls, note = null) {
   paperMaxDailyEl.value = controls.maxTradesPerDay ?? 5;
   const tradesToday = controls.tradesOpenedToday ?? 0;
   const modeNote = controls.allowSimulation
-    ? `Profit-first simulation is strict: score ${controls.minSimulationScore ?? 75}+, setup ${controls.minSimulationSetupQuality ?? 72}+, R/R ${ratio(controls.minSimulationRewardRisk ?? 1.8)}x+, probability ${pct(controls.minSimulationProbability ?? 0.64)}+, long-only.`
+    ? `Profit-first simulation now requires trusted data, a real catalyst, score ${controls.minSimulationScore ?? 75}+, setup ${controls.minSimulationSetupQuality ?? 72}+, R/R ${ratio(controls.minSimulationRewardRisk ?? 1.8)}x+, probability ${pct(controls.minSimulationProbability ?? 0.64)}+, long-only.`
     : "Only strict real-data and real-catalyst entries are allowed.";
   paperControlNoteEl.textContent =
     note ??

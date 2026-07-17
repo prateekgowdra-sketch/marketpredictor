@@ -258,6 +258,11 @@ const statements = {
     FROM paper_trades
     WHERE opened_at >= ?
   `),
+  paperTradesSince: db.prepare(`
+    SELECT * FROM paper_trades
+    WHERE opened_at >= ?
+    ORDER BY opened_at DESC, id DESC
+  `),
   recentSignals: db.prepare(`
     SELECT * FROM signals
     ORDER BY ts DESC, id DESC
@@ -516,6 +521,10 @@ export function getPaperTradeStats() {
 export function getPaperTradesOpenedSince(ts) {
   const row = statements.paperTradesOpenedSince.get(ts);
   return row.count ?? 0;
+}
+
+export function getPaperTradesSince(ts) {
+  return statements.paperTradesSince.all(ts).map(parsePaperTrade);
 }
 
 export function getRecentSignals(limit = 50) {

@@ -1,6 +1,7 @@
 import {
   getPaperTradeStats,
   getPaperTradesOpenedSince,
+  getPaperTradesSince,
   getRecentPaperTrades,
   savePaperTrade,
   updatePaperTrade
@@ -23,6 +24,8 @@ export class PaperTrader {
     this.minSimulationProbability = Number(process.env.PAPER_SIM_MIN_PROBABILITY ?? 0.64);
     this.maxSimulationRiskScore = Number(process.env.PAPER_SIM_MAX_RISK_SCORE ?? 48);
     this.maxSimulationMovePct = Number(process.env.PAPER_SIM_MAX_MOVE_PCT ?? 0.12);
+    this.maxDailyLosses = Number(process.env.PAPER_MAX_DAILY_LOSSES ?? 3);
+    this.maxDailyDrawdownPct = Number(process.env.PAPER_MAX_DAILY_DRAWDOWN_PCT ?? 0.08);
   }
 
   syncFromDatabase() {
@@ -46,9 +49,16 @@ export class PaperTrader {
       return this.summary("Paper trading is off in controls.");
     }
 
+    const guard = this.dailyGuard();
+    if (guard.paused) {
+      return this.summary(guard.reason, guard);
+    }
+
     for (const opportunity of opportunities) {
       if (this.openTrades.size >= this.maxOpenTrades) break;
       if (this.tradesOpenedToday() >= this.maxTradesPerDay) break;
+      if (guard.blockedSymbols.has(opportunity.symbol)) continue;
+      if (guard.blockedSetups.has(opportunity.dayTradeSetup?.type)) continue;
       const mode = this.tradeModeFor(opportunity);
       if (!mode) continue;
       if (this.openTrades.has(opportunity.symbol)) continue;
@@ -77,6 +87,8 @@ export class PaperTrader {
       !["No Clean Day-Trade Setup", "VWAP Rejection", "Failed Breakout"].includes(opportunity.dayTradeSetup?.type);
     const simulation =
       this.allowSimulation &&
+      opportunity.dataQuality?.isRealTimeTrusted === true &&
+      opportunity.researchSummary?.hasRealCatalyst === true &&
       opportunity.score >= this.minSimulationScore &&
       setupQuality >= this.minSimulationSetupQuality &&
       rewardRisk >= this.minSimulationRewardRisk &&
@@ -175,7 +187,51 @@ export class PaperTrader {
     return getPaperTradesOpenedSince(start.toISOString());
   }
 
-  summary(note = null) {
+  todayTrades() {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    return getPaperTradesSince(start.toISOString());
+  }
+
+  dailyGuard() {
+    const trades = this.todayTrades();
+    const closed = trades.filter((trade) => trade.status === "closed");
+    const losses = closed.filter((trade) => (trade.pnlPct ?? 0) < 0);
+    const totalLossPct = Math.abs(losses.reduce((sum, trade) => sum + Math.min(0, trade.pnlPct ?? 0), 0));
+    const blockedSymbols = new Set();
+    const blockedSetups = new Set();
+    const lossBySymbol = new Map();
+    const lossBySetup = new Map();
+
+    for (const trade of losses) {
+      lossBySymbol.set(trade.symbol, (lossBySymbol.get(trade.symbol) ?? 0) + 1);
+      const setup = trade.setup?.type;
+      if (setup) lossBySetup.set(setup, (lossBySetup.get(setup) ?? 0) + 1);
+    }
+
+    for (const [symbol, count] of lossBySymbol.entries()) {
+      if (count >= 2) blockedSymbols.add(symbol);
+    }
+    for (const [setup, count] of lossBySetup.entries()) {
+      if (count >= 2) blockedSetups.add(setup);
+    }
+
+    const paused = losses.length >= this.maxDailyLosses || totalLossPct >= this.maxDailyDrawdownPct;
+    const reason = paused
+      ? `Daily paper-trading guard paused new entries after ${losses.length} losses and ${Math.round(totalLossPct * 1000) / 10}% cumulative loss. Review the trade desk before re-enabling.`
+      : null;
+
+    return {
+      paused,
+      reason,
+      lossesToday: losses.length,
+      totalLossPct,
+      blockedSymbols,
+      blockedSetups
+    };
+  }
+
+  summary(note = null, guard = this.dailyGuard()) {
     return {
       generatedAt: new Date().toISOString(),
       controls: {
@@ -193,7 +249,17 @@ export class PaperTrader {
         minSimulationProbability: this.minSimulationProbability,
         maxSimulationRiskScore: this.maxSimulationRiskScore,
         maxSimulationMovePct: this.maxSimulationMovePct,
+        maxDailyLosses: this.maxDailyLosses,
+        maxDailyDrawdownPct: this.maxDailyDrawdownPct,
         tradesOpenedToday: this.tradesOpenedToday()
+      },
+      guard: {
+        paused: guard.paused,
+        reason: guard.reason,
+        lossesToday: guard.lossesToday,
+        totalLossPct: guard.totalLossPct,
+        blockedSymbols: [...guard.blockedSymbols],
+        blockedSetups: [...guard.blockedSetups]
       },
       note,
       stats: getPaperTradeStats(),

@@ -84,7 +84,9 @@ The Strategy Report is the controlled research lab view. It shows saved artifact
 
 The Paper Trade Review Desk grades recent journal rows, separates current-format trades from legacy rows, flags questionable/invalid simulation entries, and lists the most common failure reason. Bad trades should be treated as diagnostic evidence, not hidden.
 
-Simulation mode is now profit-first instead of activity-first. It opens fewer trades and requires a long setup, stronger score, stronger setup quality, positive expected return, higher ML probability, lower risk score, price above VWAP, relative volume, and acceptable reward/risk. Short-watch setups are not opened by the long-only paper P/L engine.
+Simulation mode is now profit-first instead of activity-first. It opens fewer trades and requires trusted data, a real catalyst, a long setup, stronger score, stronger setup quality, positive expected return, higher ML probability, lower risk score, price above VWAP, relative volume, and acceptable reward/risk. Short-watch setups are not opened by the long-only paper P/L engine.
+
+After the first five current-format simulation losses all came from `Gap-and-Go` + fallback data + weak/no real catalyst, the paper trader now has daily guardrails. It pauses new entries after too many daily losses or too much cumulative loss, blocks tickers with repeated same-day losses, and blocks setups with repeated same-day losses until the next trading day.
 
 The dashboard is split into views from the sidebar: Radar for active opportunities and controls, Lab for strategy performance, Review for trade diagnostics and learning, and Data for provider/scan health.
 

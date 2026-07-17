@@ -82,6 +82,8 @@ Paper trade history, realized P/L, setup details, and simulation review notes ar
 
 The Strategy Report is the controlled research lab view. It shows saved artifacts, strict-vs-simulation split, closed trades available for metrics, exportable journal rows, and a cumulative simulation return curve. The curve only becomes meaningful after trades close; open trades are stored but do not count as proof.
 
+The Paper Trade Review Desk grades recent journal rows, separates current-format trades from legacy rows, flags questionable/invalid simulation entries, and lists the most common failure reason. Bad trades should be treated as diagnostic evidence, not hidden.
+
 ## Catalyst Research
 
 The research engine can pull real catalyst context from Polygon/Massive news, SEC EDGAR filings, and optional Finnhub earnings calendar data:

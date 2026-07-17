@@ -356,8 +356,29 @@
         <div id="outcomeStats" class="outcome-stats"></div>
         <section class="journal-section">
           <div class="section-heading">
-            <h3>Paper Trade Journal</h3>
+            <div>
+              <h3>Paper Trade Review Desk</h3>
+              <p class="section-subtitle">Grades, validity flags, and failure reasons for the saved trade journal.</p>
+            </div>
             <span id="paperJournalCount">0</span>
+          </div>
+          <div class="journal-diagnostics">
+            <div>
+              <span>Current Format</span>
+              <strong id="journalCurrentCount">0</strong>
+            </div>
+            <div>
+              <span>Legacy Ignored</span>
+              <strong id="journalLegacyCount">0</strong>
+            </div>
+            <div>
+              <span>Questionable</span>
+              <strong id="journalQuestionableCount">0</strong>
+            </div>
+            <div>
+              <span>Worst Failure</span>
+              <strong id="journalWorstFailure">Waiting</strong>
+            </div>
           </div>
           <div id="paperJournalList" class="paper-journal-list"></div>
         </section>

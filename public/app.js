@@ -79,6 +79,10 @@ const researchCountEl = document.querySelector("#researchCount");
 const researchListEl = document.querySelector("#researchList");
 const paperJournalCountEl = document.querySelector("#paperJournalCount");
 const paperJournalListEl = document.querySelector("#paperJournalList");
+const journalCurrentCountEl = document.querySelector("#journalCurrentCount");
+const journalLegacyCountEl = document.querySelector("#journalLegacyCount");
+const journalQuestionableCountEl = document.querySelector("#journalQuestionableCount");
+const journalWorstFailureEl = document.querySelector("#journalWorstFailure");
 
 let snapshot = null;
 let rankedOpportunities = [];
@@ -126,6 +130,53 @@ function ratio(value) {
   if (value === Infinity) return "∞";
   if (!Number.isFinite(value)) return "0.00";
   return value.toFixed(2);
+}
+
+function modeForTrade(trade) {
+  if (trade.review?.mode) return trade.review.mode;
+  if (trade.dataQuality?.isRealTimeTrusted) return "strict";
+  return trade.setup && trade.research && trade.dataQuality ? "simulation" : "legacy";
+}
+
+function gradeTrade(trade) {
+  if (!trade.setup || !trade.research || !trade.dataQuality) return "LEG";
+  if (trade.review?.invalidated || trade.exitReason === "simulation-anomaly") return "F";
+  if (trade.status === "open") return "OPEN";
+  const pnl = trade.pnlPct ?? 0;
+  const dataPenalty = trade.dataQuality?.isRealTimeTrusted ? 0 : 1;
+  const blockerPenalty = trade.review?.blockersAtEntry?.length ? 1 : 0;
+  const score = pnl >= 0.04 ? 5 : pnl >= 0.015 ? 4 : pnl >= 0 ? 3 : pnl > -0.03 ? 2 : 1;
+  const adjusted = Math.max(1, score - dataPenalty - blockerPenalty);
+  return adjusted >= 5 ? "A" : adjusted >= 4 ? "B" : adjusted >= 3 ? "C" : adjusted >= 2 ? "D" : "F";
+}
+
+function analyzeTrade(trade) {
+  const mode = modeForTrade(trade);
+  const problems = [];
+  if (!trade.setup || !trade.research || !trade.dataQuality) problems.push("legacy row lacks setup/research review data");
+  if (mode === "simulation") problems.push("simulation only");
+  if (!trade.dataQuality?.isRealTimeTrusted) problems.push(`${trade.dataQuality?.label ?? "untrusted"} data`);
+  if (trade.review?.blockersAtEntry?.length) problems.push(trade.review.blockersAtEntry[0]);
+  if (trade.exitReason === "stop") problems.push("stopped out");
+  if (trade.exitReason === "simulation-anomaly") problems.push("fake-price anomaly");
+  if ((trade.pnlPct ?? 0) < 0) problems.push("negative P/L");
+  if (trade.status === "open") problems.push("still open");
+  if (trade.review?.invalidated) problems.push(trade.review.invalidationReason ?? "invalidated");
+
+  const validity = !trade.setup || !trade.research || !trade.dataQuality
+    ? "legacy"
+    : trade.review?.invalidated || trade.exitReason === "simulation-anomaly"
+    ? "invalid"
+    : mode === "simulation" || !trade.dataQuality?.isRealTimeTrusted || trade.review?.blockersAtEntry?.length
+    ? "questionable"
+    : "valid";
+
+  return {
+    mode,
+    grade: gradeTrade(trade),
+    validity,
+    problems: problems.length ? problems : ["clean review row"]
+  };
 }
 
 function renderCurveChart(points = []) {
@@ -712,18 +763,39 @@ function renderLearning() {
 }
 
 function renderPaperJournal(trades) {
+  const analyzed = trades.map((trade) => ({ trade, analysis: analyzeTrade(trade) }));
+  const current = analyzed.filter(({ analysis }) => analysis.validity !== "legacy");
+  const legacy = analyzed.length - current.length;
+  const questionable = current.filter(({ analysis }) => analysis.validity !== "valid").length;
+  const failureCounts = new Map();
+  for (const { analysis } of analyzed) {
+    const key = analysis.problems[0];
+    if (!key || key === "clean review row") continue;
+    failureCounts.set(key, (failureCounts.get(key) ?? 0) + 1);
+  }
+  const worstFailure = [...failureCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+
   paperJournalCountEl.textContent = trades.length;
+  journalCurrentCountEl.textContent = current.length;
+  journalLegacyCountEl.textContent = legacy;
+  journalQuestionableCountEl.textContent = questionable;
+  journalWorstFailureEl.textContent = worstFailure ? `${worstFailure[0]} (${worstFailure[1]})` : "None yet";
   paperJournalListEl.innerHTML =
     trades.length === 0
       ? `<div class="empty-state">No journal entries yet. A paper trade is only logged after a real-data, real-catalyst Signal opens.</div>`
-      : trades
-          .slice(0, 8)
+      : analyzed
+          .slice(0, 12)
           .map(
-            (trade) => `
-              <div class="journal-entry ${trade.status}">
-                <div>
+            ({ trade, analysis }) => `
+              <div class="journal-entry ${trade.status} ${analysis.validity}">
+                <div class="journal-symbol-cell">
                   <strong>${trade.symbol}</strong>
                   <span>${trade.status}${trade.exitReason ? ` - ${trade.exitReason}` : ""}</span>
+                  <div class="journal-pills">
+                    <em class="grade-pill grade-${analysis.grade.toLowerCase()}">${analysis.grade}</em>
+                    <em class="validity-pill ${analysis.validity}">${analysis.validity}</em>
+                    <em>${analysis.mode}</em>
+                  </div>
                 </div>
                 <div>
                   <span>Setup</span>
@@ -740,6 +812,10 @@ function renderPaperJournal(trades) {
                 <div>
                   <span>P/L</span>
                   <strong>${signedPct(trade.pnlPct ?? 0)} / ${money(trade.pnlDollars ?? 0)}</strong>
+                </div>
+                <div class="journal-diagnosis">
+                  <span>Diagnosis</span>
+                  <strong>${analysis.problems.slice(0, 3).join(" - ")}</strong>
                 </div>
               </div>
             `

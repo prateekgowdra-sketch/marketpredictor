@@ -1193,6 +1193,33 @@ select {
   margin-top: 16px;
 }
 
+.journal-diagnostics {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 12px;
+}
+
+.journal-diagnostics div {
+  background: linear-gradient(180deg, rgba(21, 31, 50, 0.94), rgba(12, 18, 32, 0.96));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.journal-diagnostics span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.journal-diagnostics strong {
+  color: var(--text);
+  display: block;
+  font-size: 18px;
+}
+
 .paper-journal-list {
   display: grid;
   gap: 8px;
@@ -1205,12 +1232,24 @@ select {
   border-radius: 8px;
   display: grid;
   gap: 10px;
-  grid-template-columns: 0.8fr 1.2fr 0.8fr 0.8fr 0.9fr;
+  grid-template-columns: 1.05fr 1.1fr 0.8fr 0.85fr 0.9fr 1.45fr;
   padding: 10px;
 }
 
 .journal-entry.open {
   border-color: rgba(22, 212, 155, 0.45);
+}
+
+.journal-entry.questionable {
+  border-color: rgba(247, 216, 74, 0.34);
+}
+
+.journal-entry.invalid {
+  border-color: rgba(255, 83, 112, 0.48);
+}
+
+.journal-entry.legacy {
+  opacity: 0.72;
 }
 
 .journal-entry span {
@@ -1224,6 +1263,66 @@ select {
   display: block;
   font-size: 13px;
   line-height: 1.25;
+}
+
+.journal-symbol-cell {
+  display: grid;
+  gap: 5px;
+}
+
+.journal-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.journal-pills em {
+  background: rgba(15, 23, 42, 0.76);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+  padding: 5px 7px;
+}
+
+.grade-pill.grade-a,
+.grade-pill.grade-b {
+  border-color: rgba(22, 212, 155, 0.36);
+  color: var(--green);
+}
+
+.grade-pill.grade-c,
+.grade-pill.grade-open {
+  border-color: rgba(25, 211, 255, 0.34);
+  color: var(--cyan);
+}
+
+.grade-pill.grade-d,
+.validity-pill.questionable {
+  border-color: rgba(247, 216, 74, 0.36);
+  color: var(--yellow);
+}
+
+.grade-pill.grade-f,
+.validity-pill.invalid {
+  border-color: rgba(255, 83, 112, 0.42);
+  color: #ff9aad;
+}
+
+.validity-pill.valid {
+  border-color: rgba(22, 212, 155, 0.36);
+  color: var(--green);
+}
+
+.validity-pill.legacy {
+  color: var(--muted);
+}
+
+.journal-diagnosis strong {
+  color: var(--yellow);
 }
 
 .intel-grid,
@@ -1310,6 +1409,7 @@ select {
   .scan-candidates,
   .learning-grid,
   .lab-grid,
+  .journal-diagnostics,
   .performance-board,
   .performance-metrics,
   .strategy-grid,

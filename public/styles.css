@@ -16,9 +16,9 @@
   --yellow: #f7d84a;
   --red: #ff5370;
   --cyan: #19d3ff;
-  --purple: #9b7cff;
-  --purple-2: #6d5df7;
-  --purple-soft: rgba(155, 124, 255, 0.18);
+  --accent: var(--cyan);
+  --accent-2: var(--green);
+  --accent-soft: rgba(25, 211, 255, 0.18);
   --ink: #071018;
 }
 
@@ -30,9 +30,9 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(rgba(155, 124, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(25, 211, 255, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(25, 211, 255, 0.028) 1px, transparent 1px),
-    linear-gradient(135deg, rgba(155, 124, 255, 0.22) 0%, transparent 26%, transparent 72%, rgba(22, 212, 155, 0.12) 100%),
+    linear-gradient(135deg, rgba(25, 211, 255, 0.12) 0%, transparent 26%, transparent 72%, rgba(22, 212, 155, 0.12) 100%),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
   background-size: 36px 36px, 36px 36px, auto, auto;
   color: var(--text);
@@ -69,11 +69,11 @@ select {
   place-items: center;
   width: 38px;
   height: 38px;
-  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  background: linear-gradient(135deg, var(--cyan), var(--green));
   color: var(--ink);
   font-weight: 900;
   border-radius: 8px;
-  box-shadow: 0 12px 26px rgba(155, 124, 255, 0.28);
+  box-shadow: 0 12px 26px rgba(25, 211, 255, 0.28);
 }
 
 h1,
@@ -120,7 +120,7 @@ h1 {
 .nav button.active,
 .nav button:hover {
   background: rgba(246, 251, 255, 0.07);
-  border-color: rgba(155, 124, 255, 0.28);
+  border-color: rgba(25, 211, 255, 0.28);
   color: var(--text);
 }
 
@@ -130,7 +130,7 @@ h1 {
 
 .nav button.active::after {
   content: "";
-  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  background: linear-gradient(135deg, var(--cyan), var(--green));
   border-radius: 999px;
   float: right;
   height: 8px;
@@ -177,9 +177,9 @@ select {
 .view-carousel {
   align-items: center;
   background:
-    linear-gradient(135deg, rgba(155, 124, 255, 0.11), transparent 38%),
+    linear-gradient(135deg, rgba(25, 211, 255, 0.08), transparent 38%),
     linear-gradient(180deg, rgba(17, 17, 29, 0.92), rgba(9, 10, 20, 0.96));
-  border: 1px solid rgba(155, 124, 255, 0.24);
+  border: 1px solid rgba(25, 211, 255, 0.24);
   border-radius: 8px;
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
   display: grid;
@@ -192,7 +192,7 @@ select {
 .view-carousel button {
   align-items: center;
   background: rgba(246, 251, 255, 0.06);
-  border: 1px solid rgba(155, 124, 255, 0.3);
+  border: 1px solid rgba(25, 211, 255, 0.30);
   border-radius: 8px;
   color: var(--cyan);
   cursor: pointer;
@@ -251,8 +251,8 @@ select {
 }
 
 .view-dots span.active {
-  background: linear-gradient(135deg, var(--purple), var(--cyan));
-  box-shadow: 0 0 14px rgba(155, 124, 255, 0.24);
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+  box-shadow: 0 0 14px rgba(25, 211, 255, 0.24);
 }
 
 .topbar-actions {
@@ -277,7 +277,7 @@ select {
 
 .search-box input {
   background: rgba(9, 10, 20, 0.78);
-  border: 1px solid rgba(155, 124, 255, 0.26);
+  border: 1px solid rgba(25, 211, 255, 0.26);
   border-radius: 8px;
   color: var(--text);
   min-width: 260px;
@@ -323,7 +323,7 @@ select {
   display: flex;
   align-items: center;
   gap: 9px;
-  border: 1px solid rgba(155, 124, 255, 0.28);
+  border: 1px solid rgba(25, 211, 255, 0.28);
   padding: 10px 12px;
   border-radius: 8px;
   background: rgba(9, 10, 20, 0.78);
@@ -333,7 +333,7 @@ select {
 .profile-chip {
   align-items: center;
   background: rgba(9, 10, 20, 0.78);
-  border: 1px solid rgba(155, 124, 255, 0.26);
+  border: 1px solid rgba(25, 211, 255, 0.26);
   border-radius: 8px;
   display: flex;
   gap: 9px;
@@ -342,7 +342,7 @@ select {
 }
 
 .profile-chip > span {
-  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  background: linear-gradient(135deg, var(--cyan), var(--green));
   border-radius: 8px;
   color: var(--ink);
   display: grid;
@@ -383,9 +383,9 @@ select {
 }
 
 .metrics div {
-  border: 1px solid rgba(155, 124, 255, 0.2);
+  border: 1px solid rgba(25, 211, 255, 0.20);
   background:
-    linear-gradient(135deg, rgba(155, 124, 255, 0.12), transparent 45%),
+    linear-gradient(135deg, rgba(25, 211, 255, 0.10), transparent 45%),
     linear-gradient(180deg, rgba(18, 18, 31, 0.96) 0%, rgba(10, 11, 22, 0.98) 100%);
   border-radius: 8px;
   min-height: 126px;
@@ -420,7 +420,7 @@ select {
 
 .metrics div:nth-child(4)::after {
   background:
-    linear-gradient(140deg, transparent 0 40%, rgba(155, 124, 255, 0.78) 41% 45%, transparent 46% 62%, rgba(25, 211, 255, 0.74) 63% 67%, transparent 68% 100%);
+    linear-gradient(140deg, transparent 0 40%, rgba(25, 211, 255, 0.72) 41% 45%, transparent 46% 62%, rgba(25, 211, 255, 0.74) 63% 67%, transparent 68% 100%);
 }
 
 .metrics strong {
@@ -443,9 +443,9 @@ select {
 .paper-control-panel,
 .opportunity-list,
 .learning-panel {
-  border: 1px solid rgba(155, 124, 255, 0.2);
+  border: 1px solid rgba(25, 211, 255, 0.20);
   background:
-    linear-gradient(140deg, rgba(155, 124, 255, 0.08), transparent 42%),
+    linear-gradient(140deg, rgba(25, 211, 255, 0.06), transparent 42%),
     linear-gradient(180deg, rgba(17, 17, 29, 0.94) 0%, rgba(9, 10, 20, 0.97) 100%);
   border-radius: 8px;
   padding: 16px;
@@ -469,7 +469,7 @@ select {
 
 .control-strip input[type="number"] {
   background: rgba(6, 7, 14, 0.8);
-  border: 1px solid rgba(155, 124, 255, 0.22);
+  border: 1px solid rgba(25, 211, 255, 0.12);
   border-radius: 8px;
   color: var(--text);
   min-width: 0;
@@ -479,7 +479,7 @@ select {
 .toggle-row {
   align-items: center;
   background: rgba(23, 24, 41, 0.86);
-  border: 1px solid rgba(155, 124, 255, 0.22);
+  border: 1px solid rgba(25, 211, 255, 0.12);
   border-radius: 8px;
   display: flex !important;
   gap: 9px !important;
@@ -492,8 +492,8 @@ select {
 }
 
 .secondary-action {
-  background: rgba(155, 124, 255, 0.12);
-  border: 1px solid rgba(155, 124, 255, 0.36);
+  background: rgba(25, 211, 255, 0.10);
+  border: 1px solid rgba(25, 211, 255, 0.36);
   border-radius: 8px;
   color: var(--text);
   cursor: pointer;
@@ -534,7 +534,7 @@ select {
 
 .data-health-grid div {
   background: rgba(23, 24, 41, 0.82);
-  border: 1px solid rgba(155, 124, 255, 0.18);
+  border: 1px solid rgba(25, 211, 255, 0.18);
   border-radius: 8px;
   padding: 12px;
 }
@@ -556,7 +556,7 @@ select {
 .signal-grid div,
 .paper-trade {
   background: rgba(23, 24, 41, 0.82);
-  border: 1px solid rgba(155, 124, 255, 0.18);
+  border: 1px solid rgba(25, 211, 255, 0.18);
   border-radius: 8px;
   padding: 12px;
 }
@@ -599,7 +599,7 @@ select {
 .readiness-summary,
 .readiness-check {
   background: rgba(23, 24, 41, 0.82);
-  border: 1px solid rgba(155, 124, 255, 0.18);
+  border: 1px solid rgba(25, 211, 255, 0.18);
   border-radius: 8px;
   padding: 12px;
 }
@@ -674,7 +674,7 @@ select {
 .scan-metrics div,
 .scan-candidate {
   background: rgba(23, 24, 41, 0.82);
-  border: 1px solid rgba(155, 124, 255, 0.18);
+  border: 1px solid rgba(25, 211, 255, 0.18);
   border-radius: 8px;
   padding: 12px;
 }
@@ -753,9 +753,9 @@ select {
 }
 
 .ticker-row {
-  border: 1px solid rgba(155, 124, 255, 0.18);
+  border: 1px solid rgba(25, 211, 255, 0.18);
   background:
-    linear-gradient(135deg, rgba(155, 124, 255, 0.08), transparent 55%),
+    linear-gradient(135deg, rgba(25, 211, 255, 0.06), transparent 55%),
     linear-gradient(180deg, rgba(23, 24, 41, 0.92), rgba(9, 10, 20, 0.98));
   border-radius: 8px;
   padding: 14px;
@@ -951,9 +951,9 @@ select {
 .detail-panel {
   position: sticky;
   top: 24px;
-  border: 1px solid rgba(155, 124, 255, 0.2);
+  border: 1px solid rgba(25, 211, 255, 0.20);
   background:
-    linear-gradient(135deg, rgba(155, 124, 255, 0.08), transparent 45%),
+    linear-gradient(135deg, rgba(25, 211, 255, 0.06), transparent 45%),
     linear-gradient(180deg, rgba(17, 17, 29, 0.97) 0%, rgba(9, 10, 20, 0.98) 100%);
   border-radius: 8px;
   padding: 16px;
@@ -1148,9 +1148,9 @@ select {
 
 .learning-panel,
 .strategy-report-panel {
-  border: 1px solid rgba(155, 124, 255, 0.2);
+  border: 1px solid rgba(25, 211, 255, 0.20);
   background:
-    linear-gradient(140deg, rgba(155, 124, 255, 0.08), transparent 42%),
+    linear-gradient(140deg, rgba(25, 211, 255, 0.06), transparent 42%),
     linear-gradient(180deg, rgba(17, 17, 29, 0.94), rgba(9, 10, 20, 0.97));
   border-radius: 8px;
   padding: 16px;
@@ -1174,7 +1174,7 @@ select {
 .outcome-card,
 .strategy-grid div {
   background: rgba(23, 24, 41, 0.82);
-  border: 1px solid rgba(155, 124, 255, 0.18);
+  border: 1px solid rgba(25, 211, 255, 0.18);
   border-radius: 8px;
   padding: 12px;
 }
@@ -1209,9 +1209,9 @@ select {
 .lab-grid div,
 .performance-metrics div {
   background:
-    linear-gradient(135deg, rgba(155, 124, 255, 0.1), transparent 55%),
+    linear-gradient(135deg, rgba(25, 211, 255, 0.08), transparent 55%),
     linear-gradient(180deg, rgba(23, 24, 41, 0.9), rgba(9, 10, 20, 0.97));
-  border: 1px solid rgba(155, 124, 255, 0.2);
+  border: 1px solid rgba(25, 211, 255, 0.20);
   border-radius: 8px;
   padding: 12px;
 }
@@ -1247,11 +1247,11 @@ select {
 
 .return-chart-card {
   background:
-    linear-gradient(rgba(155, 124, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(25, 211, 255, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(25, 211, 255, 0.03) 1px, transparent 1px),
     linear-gradient(180deg, rgba(12, 13, 24, 0.98), rgba(6, 6, 13, 0.98));
   background-size: 28px 28px, 28px 28px, auto;
-  border: 1px solid rgba(155, 124, 255, 0.24);
+  border: 1px solid rgba(25, 211, 255, 0.24);
   border-radius: 8px;
   min-width: 0;
   padding: 14px;
@@ -1375,7 +1375,8 @@ select {
 }
 
 .report-storage-note {
-  margin-top: -4px;
+  margin-top: 2px;
+  margin-bottom: 14px;
 }
 
 .report-storage-note code {
@@ -1407,9 +1408,9 @@ select {
 
 .journal-diagnostics div {
   background:
-    linear-gradient(135deg, rgba(155, 124, 255, 0.1), transparent 55%),
+    linear-gradient(135deg, rgba(25, 211, 255, 0.08), transparent 55%),
     linear-gradient(180deg, rgba(23, 24, 41, 0.9), rgba(9, 10, 20, 0.97));
-  border: 1px solid rgba(155, 124, 255, 0.2);
+  border: 1px solid rgba(25, 211, 255, 0.20);
   border-radius: 8px;
   padding: 12px;
 }
@@ -1435,7 +1436,7 @@ select {
 .journal-entry {
   align-items: center;
   background: rgba(9, 10, 20, 0.82);
-  border: 1px solid rgba(155, 124, 255, 0.18);
+  border: 1px solid rgba(25, 211, 255, 0.18);
   border-radius: 8px;
   display: grid;
   gap: 10px;
@@ -1535,9 +1536,26 @@ select {
 .intel-grid,
 .strategy-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-top: 16px;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.strategy-columns > section {
+  min-width: 0;
+}
+
+.strategy-columns .section-heading {
+  min-height: 32px;
+}
+
+.setup-report-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#tradeReviewList {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .intel-list {
@@ -1546,7 +1564,7 @@ select {
 }
 
 .intel-item {
-  border: 1px solid rgba(155, 124, 255, 0.18);
+  border: 1px solid rgba(25, 211, 255, 0.18);
   background: rgba(9, 10, 20, 0.82);
   border-radius: 8px;
   padding: 10px;
@@ -1567,6 +1585,7 @@ select {
 .strategy-item {
   display: grid;
   gap: 10px;
+  min-height: 114px;
 }
 
 .strategy-item.invalidated {
@@ -1639,7 +1658,9 @@ select {
   .outcome-stats,
   .journal-entry,
   .intel-grid,
-  .strategy-columns {
+  .strategy-columns,
+  .setup-report-grid,
+  #tradeReviewList {
     grid-template-columns: 1fr;
   }
 

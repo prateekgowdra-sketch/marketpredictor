@@ -167,6 +167,7 @@ export class MarketEngine {
       tick,
       provider: this.provider.name,
       dataHealth: this.provider.health ? this.provider.health() : null,
+      dataQualitySummary: summarizeDataQuality(opportunities),
       generatedAt: new Date().toISOString(),
       summary: summarizeMarket(opportunities),
       scan: this.latestScan,
@@ -186,5 +187,13 @@ function summarizeSignalDecisions(opportunities) {
   return {
     ...counts,
     actionRate: opportunities.length ? counts.Signal / opportunities.length : 0
+  };
+}
+
+export function summarizeDataQuality(opportunities) {
+  return {
+    realTimeTrusted: opportunities.filter((item) => item.dataQuality?.isRealTimeTrusted).length,
+    delayedReal: opportunities.filter((item) => item.dataQuality?.isRealData && !item.dataQuality?.isRealTimeTrusted).length,
+    fallback: opportunities.filter((item) => item.dataQuality?.tier === "fallback").length
   };
 }

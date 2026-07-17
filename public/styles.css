@@ -575,6 +575,11 @@ select {
     linear-gradient(180deg, rgba(18, 58, 73, 0.72), rgba(11, 20, 34, 0.98));
 }
 
+.ticker-row.simulated {
+  border-style: dashed;
+  opacity: 0.88;
+}
+
 .symbol {
   font-size: 20px;
   font-weight: 800;
@@ -697,6 +702,13 @@ select {
   color: var(--text);
 }
 
+.quote-preview {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin: 2px 0 4px;
+}
+
 .priority {
   color: var(--amber-2);
   font-size: 12px;
@@ -768,6 +780,21 @@ select {
   font-size: 24px;
   font-weight: 800;
   color: var(--green);
+}
+
+.simulated-price {
+  color: var(--yellow);
+}
+
+.sim-warning {
+  background: rgba(247, 216, 74, 0.1);
+  border: 1px solid rgba(247, 216, 74, 0.32);
+  border-radius: 8px;
+  color: #fff7b0;
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0 0 12px;
+  padding: 10px;
 }
 
 .detail-grid {

@@ -83,6 +83,14 @@ function money(value) {
   }).format(value);
 }
 
+function isFallbackQuote(item) {
+  return item?.dataQuality?.tier === "fallback" || item?.dataQuality?.source === "mock";
+}
+
+function quoteMoney(item, value) {
+  return `${isFallbackQuote(item) ? "SIM " : ""}${money(value)}`;
+}
+
 function pct(value) {
   return `${(value * 100).toFixed(2)}%`;
 }
@@ -346,6 +354,7 @@ function renderList() {
     const row = document.createElement("button");
     row.type = "button";
     row.className = `ticker-row ${item.symbol === selectedSymbol ? "selected" : ""}`;
+    if (isFallbackQuote(item)) row.classList.add("simulated");
     row.innerHTML = `
       <div>
         <div class="symbol">${item.symbol}</div>
@@ -359,6 +368,7 @@ function renderList() {
       </div>
         <div class="score">
           <strong>${item.score.toFixed(0)}</strong>
+        <span class="quote-preview">${quoteMoney(item, item.price)}</span>
         <span class="${decisionClass(item.signalDecision?.label)}">${item.signalDecision?.label ?? "Reject"}</span>
         <span class="${priorityClass(item.priority)}">${item.priority}</span>
         <span class="probability">${item.prediction ? pct(item.prediction.probabilityUp) : "-"}</span>
@@ -398,13 +408,18 @@ function renderDetail(force = false) {
         <h4>${item.symbol}</h4>
         <p class="meta">${item.company} - ${item.sector}</p>
       </div>
-      <div class="price">${money(item.price)}</div>
+      <div class="price ${isFallbackQuote(item) ? "simulated-price" : ""}">${quoteMoney(item, item.price)}</div>
     </div>
+    ${
+      isFallbackQuote(item)
+        ? `<div class="sim-warning">Simulation price only. Polygon did not return usable bars for this ticker, so this quote will not match live trading apps.</div>`
+        : ""
+    }
     <div class="detail-grid">
       <div><span>Confidence</span><strong>${item.confidence.toFixed(0)}%</strong></div>
       <div><span>Relative Volume</span><strong>${item.technical.relativeVolume.toFixed(2)}x</strong></div>
-      <div><span>Entry Zone</span><strong>${money(item.entryZone[0])} - ${money(item.entryZone[1])}</strong></div>
-      <div><span>Stop / Target</span><strong>${money(item.stop)} / ${money(item.target)}</strong></div>
+      <div><span>Entry Zone</span><strong>${quoteMoney(item, item.entryZone[0])} - ${quoteMoney(item, item.entryZone[1])}</strong></div>
+      <div><span>Stop / Target</span><strong>${quoteMoney(item, item.stop)} / ${quoteMoney(item, item.target)}</strong></div>
       <div><span>RSI</span><strong>${item.technical.rsi ? item.technical.rsi.toFixed(1) : "-"}</strong></div>
       <div><span>Volatility</span><strong>${pct(item.technical.volatilityPct)}</strong></div>
       <div><span>ML Up Probability</span><strong>${item.prediction ? pct(item.prediction.probabilityUp) : "-"}</strong></div>
@@ -430,9 +445,9 @@ function renderDetail(force = false) {
         <strong>${item.dayTradeSetup?.trigger ?? "Wait for confirmation"}</strong>
       </div>
       <div class="setup-levels">
-        <div><span>Entry</span><strong>${money(item.dayTradeSetup?.entry ?? item.entryZone[1])}</strong></div>
-        <div><span>Stop</span><strong>${money(item.dayTradeSetup?.stop ?? item.stop)}</strong></div>
-        <div><span>Target</span><strong>${money(item.dayTradeSetup?.target ?? item.target)}</strong></div>
+        <div><span>Entry</span><strong>${quoteMoney(item, item.dayTradeSetup?.entry ?? item.entryZone[1])}</strong></div>
+        <div><span>Stop</span><strong>${quoteMoney(item, item.dayTradeSetup?.stop ?? item.stop)}</strong></div>
+        <div><span>Target</span><strong>${quoteMoney(item, item.dayTradeSetup?.target ?? item.target)}</strong></div>
         <div><span>R/R</span><strong>${(item.dayTradeSetup?.rewardRisk ?? 0).toFixed(2)}x</strong></div>
       </div>
       <p>${(item.dayTradeSetup?.reasons ?? []).join(" - ")}</p>

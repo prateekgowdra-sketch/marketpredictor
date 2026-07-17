@@ -28,6 +28,7 @@ const paperPnlEl = document.querySelector("#paperPnl");
 const paperTradesEl = document.querySelector("#paperTrades");
 const paperControlStateEl = document.querySelector("#paperControlState");
 const paperEnabledEl = document.querySelector("#paperEnabled");
+const paperAllowSimulationEl = document.querySelector("#paperAllowSimulation");
 const paperAccountSizeEl = document.querySelector("#paperAccountSize");
 const paperRiskPctEl = document.querySelector("#paperRiskPct");
 const paperMaxPositionEl = document.querySelector("#paperMaxPosition");
@@ -35,6 +36,16 @@ const paperMaxOpenEl = document.querySelector("#paperMaxOpen");
 const paperMaxDailyEl = document.querySelector("#paperMaxDaily");
 const savePaperControlsEl = document.querySelector("#savePaperControls");
 const paperControlNoteEl = document.querySelector("#paperControlNote");
+const strategySampleSizeEl = document.querySelector("#strategySampleSize");
+const simWinRateEl = document.querySelector("#simWinRate");
+const simProfitFactorEl = document.querySelector("#simProfitFactor");
+const simDrawdownEl = document.querySelector("#simDrawdown");
+const invalidatedTradesEl = document.querySelector("#invalidatedTrades");
+const strategyNoteEl = document.querySelector("#strategyNote");
+const setupReportCountEl = document.querySelector("#setupReportCount");
+const setupReportListEl = document.querySelector("#setupReportList");
+const tradeReviewCountEl = document.querySelector("#tradeReviewCount");
+const tradeReviewListEl = document.querySelector("#tradeReviewList");
 const readinessStatusEl = document.querySelector("#readinessStatus");
 const readinessSymbolEl = document.querySelector("#readinessSymbol");
 const readinessTitleEl = document.querySelector("#readinessTitle");
@@ -65,6 +76,7 @@ let detailOpportunity = null;
 let selectedSymbol = null;
 let backtest = null;
 let paperControls = null;
+let strategyReport = null;
 let lastRankedRefresh = 0;
 let lastDetailRefresh = 0;
 let renderedDetailKey = null;
@@ -98,6 +110,12 @@ function pct(value) {
 function signedPct(value) {
   const sign = value > 0 ? "+" : "";
   return `${sign}${pct(value)}`;
+}
+
+function ratio(value) {
+  if (value === Infinity) return "∞";
+  if (!Number.isFinite(value)) return "0.00";
+  return value.toFixed(2);
 }
 
 function priorityClass(priority) {
@@ -296,15 +314,79 @@ function renderPaperControls(controls, note = null) {
   paperControlStateEl.textContent = controls.enabled ? "Enabled" : "Off";
   paperControlStateEl.className = controls.enabled ? "state-pill armed" : "state-pill blocked";
   paperEnabledEl.checked = controls.enabled;
+  paperAllowSimulationEl.checked = controls.allowSimulation === true;
   paperAccountSizeEl.value = controls.accountSize ?? 10000;
   paperRiskPctEl.value = ((controls.riskPerTradePct ?? 0.005) * 100).toFixed(2);
   paperMaxPositionEl.value = controls.maxPositionNotional ?? 1000;
   paperMaxOpenEl.value = controls.maxOpenTrades ?? 3;
   paperMaxDailyEl.value = controls.maxTradesPerDay ?? 5;
   const tradesToday = controls.tradesOpenedToday ?? 0;
+  const modeNote = controls.allowSimulation
+    ? "Simulation entries are allowed, but they stay labeled as simulation and do not prove live profitability."
+    : "Only strict real-data and real-catalyst entries are allowed.";
   paperControlNoteEl.textContent =
     note ??
-    `${tradesToday}/${controls.maxTradesPerDay ?? 5} trades opened today. Real-time data, catalyst, setup, ML, and risk gates still apply.`;
+    `${tradesToday}/${controls.maxTradesPerDay ?? 5} trades opened today. ${modeNote}`;
+}
+
+function renderStrategyReport() {
+  if (!strategyReport) return;
+  const simulation = strategyReport.simulation ?? {};
+  const setups = strategyReport.bySetup ?? [];
+  const reviews = strategyReport.recentReviews ?? [];
+
+  strategySampleSizeEl.textContent = `${strategyReport.sampleSize ?? 0} trades`;
+  simWinRateEl.textContent = pct(simulation.winRate ?? 0);
+  simProfitFactorEl.textContent = ratio(simulation.profitFactor ?? 0);
+  simDrawdownEl.textContent = signedPct(simulation.maxDrawdown ?? 0);
+  invalidatedTradesEl.textContent = strategyReport.invalidatedCount ?? 0;
+  strategyNoteEl.textContent = strategyReport.note ?? "Waiting for strategy data.";
+
+  setupReportCountEl.textContent = setups.length;
+  setupReportListEl.innerHTML =
+    setups.length === 0
+      ? `<div class="empty-state">No setup history yet. Run paper trades first, then this will rank which setups are actually working.</div>`
+      : setups
+          .slice(0, 8)
+          .map(
+            (setup) => `
+              <div class="intel-item strategy-item">
+                <div>
+                  <strong>${setup.setup}</strong>
+                  <span>${setup.closed} closed / ${setup.open} open</span>
+                </div>
+                <div class="strategy-stats">
+                  <span>Win ${pct(setup.winRate ?? 0)}</span>
+                  <span>PF ${ratio(setup.profitFactor ?? 0)}</span>
+                  <span>DD ${signedPct(setup.maxDrawdown ?? 0)}</span>
+                </div>
+              </div>
+            `
+          )
+          .join("");
+
+  tradeReviewCountEl.textContent = reviews.length;
+  tradeReviewListEl.innerHTML =
+    reviews.length === 0
+      ? `<div class="empty-state">No trade reviews yet. Each new paper trade will store its entry reason, mode, setup, catalyst, and exit result.</div>`
+      : reviews
+          .slice(0, 8)
+          .map(
+            (trade) => `
+              <div class="intel-item strategy-item ${trade.review?.invalidated ? "invalidated" : ""}">
+                <div>
+                  <strong>${trade.symbol} · ${trade.mode}</strong>
+                  <span>${trade.status}${trade.exitReason ? ` - ${trade.exitReason}` : ""}</span>
+                </div>
+                <div class="strategy-stats">
+                  <span>${trade.setup}</span>
+                  <span>${trade.data}</span>
+                  <span>${signedPct(trade.pnlPct ?? 0)} / ${money(trade.pnlDollars ?? 0)}</span>
+                </div>
+              </div>
+            `
+          )
+          .join("");
 }
 
 function renderPaperReadiness() {
@@ -599,6 +681,7 @@ function render() {
   renderList();
   renderDetail();
   renderLearning();
+  renderStrategyReport();
 }
 
 scoreFilterEl.addEventListener("input", () => {
@@ -614,6 +697,7 @@ savePaperControlsEl.addEventListener("click", async () => {
   savePaperControlsEl.textContent = "Saving";
   const payload = {
     enabled: paperEnabledEl.checked,
+    allowSimulation: paperAllowSimulationEl.checked,
     accountSize: Number(paperAccountSizeEl.value),
     riskPerTradePct: Number(paperRiskPctEl.value) / 100,
     maxPositionNotional: Number(paperMaxPositionEl.value),
@@ -628,6 +712,7 @@ savePaperControlsEl.addEventListener("click", async () => {
     });
     paperControls = await response.json();
     renderPaperControls(paperControls, "Controls saved. The next research scan will use these limits.");
+    refreshStrategyReport();
   } catch {
     paperControlNoteEl.textContent = "Could not save controls.";
   } finally {
@@ -682,6 +767,7 @@ events.onmessage = (event) => {
   renderScan();
   renderDetail();
   renderLearning();
+  renderStrategyReport();
 };
 
 events.onerror = () => {
@@ -709,6 +795,17 @@ async function refreshPaperControls() {
   }
 }
 
+async function refreshStrategyReport() {
+  try {
+    const response = await fetch("/api/strategy-report");
+    if (!response.ok) return;
+    strategyReport = await response.json();
+    renderStrategyReport();
+  } catch {
+    strategyNoteEl.textContent = "Strategy report offline.";
+  }
+}
+
 async function refreshScanStatus() {
   try {
     const response = await fetch("/api/scan-status");
@@ -723,5 +820,7 @@ async function refreshScanStatus() {
 refreshBacktest();
 refreshScanStatus();
 refreshPaperControls();
+refreshStrategyReport();
 setInterval(refreshBacktest, 5000);
 setInterval(refreshScanStatus, 3000);
+setInterval(refreshStrategyReport, 7000);

@@ -122,6 +122,7 @@ db.exec(`
     setup_json TEXT,
     research_json TEXT,
     data_quality_json TEXT,
+    review_json TEXT,
     FOREIGN KEY(signal_id) REFERENCES signals(id) ON DELETE SET NULL
   );
 
@@ -153,6 +154,7 @@ addColumnIfMissing("signals", "prediction_json", "TEXT");
 addColumnIfMissing("paper_trades", "setup_json", "TEXT");
 addColumnIfMissing("paper_trades", "research_json", "TEXT");
 addColumnIfMissing("paper_trades", "data_quality_json", "TEXT");
+addColumnIfMissing("paper_trades", "review_json", "TEXT");
 
 const statements = {
   upsertTicker: db.prepare(`
@@ -212,9 +214,10 @@ const statements = {
   insertPaperTrade: db.prepare(`
     INSERT INTO paper_trades (
       symbol, signal_id, opened_at, status, entry_price, quantity, notional,
-      stop, target, decision_json, prediction_json, setup_json, research_json, data_quality_json
+      stop, target, decision_json, prediction_json, setup_json, research_json, data_quality_json,
+      review_json
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updatePaperTrade: db.prepare(`
     UPDATE paper_trades SET
@@ -226,10 +229,16 @@ const statements = {
       pnl_dollars = ?,
       max_gain_pct = ?,
       max_drawdown_pct = ?,
-      ticks_held = ?
+      ticks_held = ?,
+      review_json = ?
     WHERE id = ?
   `),
   recentPaperTrades: db.prepare(`
+    SELECT * FROM paper_trades
+    ORDER BY opened_at DESC, id DESC
+    LIMIT ?
+  `),
+  paperTradesForReport: db.prepare(`
     SELECT * FROM paper_trades
     ORDER BY opened_at DESC, id DESC
     LIMIT ?
@@ -418,7 +427,7 @@ export function saveModelRun(run) {
 }
 
 function parsePaperTrade(row) {
-  const { decision_json, prediction_json, setup_json, research_json, data_quality_json, ...trade } = row;
+  const { decision_json, prediction_json, setup_json, research_json, data_quality_json, review_json, ...trade } = row;
   return {
     id: trade.id,
     symbol: trade.symbol,
@@ -442,7 +451,8 @@ function parsePaperTrade(row) {
     prediction: JSON.parse(prediction_json),
     setup: setup_json ? JSON.parse(setup_json) : null,
     research: research_json ? JSON.parse(research_json) : null,
-    dataQuality: data_quality_json ? JSON.parse(data_quality_json) : null
+    dataQuality: data_quality_json ? JSON.parse(data_quality_json) : null,
+    review: review_json ? JSON.parse(review_json) : null
   };
 }
 
@@ -461,7 +471,8 @@ export function savePaperTrade(trade) {
     JSON.stringify(trade.prediction ?? null),
     JSON.stringify(trade.setup ?? null),
     JSON.stringify(trade.research ?? null),
-    JSON.stringify(trade.dataQuality ?? null)
+    JSON.stringify(trade.dataQuality ?? null),
+    JSON.stringify(trade.review ?? null)
   );
   return Number(result.lastInsertRowid);
 }
@@ -477,12 +488,17 @@ export function updatePaperTrade(trade) {
     trade.maxGainPct ?? 0,
     trade.maxDrawdownPct ?? 0,
     trade.ticksHeld ?? 0,
+    JSON.stringify(trade.review ?? null),
     trade.id
   );
 }
 
 export function getRecentPaperTrades(limit = 30) {
   return statements.recentPaperTrades.all(limit).map(parsePaperTrade);
+}
+
+export function getPaperTradesForReport(limit = 1000) {
+  return statements.paperTradesForReport.all(limit).map(parsePaperTrade);
 }
 
 export function getPaperTradeStats() {

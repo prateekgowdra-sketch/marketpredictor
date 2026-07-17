@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { loadEnv } from "./config.js";
 import { getBacktestSummary } from "./backtest.js";
+import { buildStrategyReport } from "./strategyReport.js";
 import {
   getPaperTradeStats,
   getRecentPaperTrades,
@@ -277,6 +278,11 @@ const server = http.createServer(async (request, response) => {
 
   if (url.pathname === "/api/backtest") {
     sendJson(response, getBacktestSummary());
+    return;
+  }
+
+  if (url.pathname === "/api/strategy-report") {
+    sendJson(response, buildStrategyReport());
     return;
   }
 

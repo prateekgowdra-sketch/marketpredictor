@@ -135,6 +135,10 @@
             <input id="paperEnabled" type="checkbox" />
             <span>Enable paper trading</span>
           </label>
+          <label class="toggle-row">
+            <input id="paperAllowSimulation" type="checkbox" />
+            <span>Allow simulation trades</span>
+          </label>
           <label>
             Account size
             <input id="paperAccountSize" type="number" min="100" step="100" />
@@ -158,6 +162,48 @@
           <button id="savePaperControls" class="secondary-action" type="button">Save Controls</button>
         </div>
         <p id="paperControlNote" class="meta">Paper trading is off until you enable it. Real-data and catalyst gates still apply.</p>
+      </section>
+
+      <section class="strategy-report-panel">
+        <div class="section-heading">
+          <h3>Strategy Report</h3>
+          <span id="strategySampleSize">0 trades</span>
+        </div>
+        <div class="strategy-grid">
+          <div>
+            <span>Simulation Win Rate</span>
+            <strong id="simWinRate">0.00%</strong>
+          </div>
+          <div>
+            <span>Profit Factor</span>
+            <strong id="simProfitFactor">0.00</strong>
+          </div>
+          <div>
+            <span>Max Drawdown</span>
+            <strong id="simDrawdown">0.00%</strong>
+          </div>
+          <div>
+            <span>Invalidated</span>
+            <strong id="invalidatedTrades">0</strong>
+          </div>
+        </div>
+        <p id="strategyNote" class="meta">No current-format simulation trades yet.</p>
+        <div class="strategy-columns">
+          <section>
+            <div class="section-heading">
+              <h3>Setup Performance</h3>
+              <span id="setupReportCount">0</span>
+            </div>
+            <div id="setupReportList" class="intel-list"></div>
+          </section>
+          <section>
+            <div class="section-heading">
+              <h3>Trade Reviews</h3>
+              <span id="tradeReviewCount">0</span>
+            </div>
+            <div id="tradeReviewList" class="intel-list"></div>
+          </section>
+        </div>
       </section>
 
       <section class="readiness-panel">

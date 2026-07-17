@@ -1,22 +1,23 @@
 :root {
   color-scheme: dark;
-  --bg: #1c1917;
-  --bg-2: #141312;
-  --panel: #292524;
-  --panel-2: #332f2c;
-  --panel-3: #211f1d;
-  --line: #403a35;
-  --line-soft: #332d29;
-  --text: #fff7ed;
-  --muted: #a8a29e;
-  --amber: #f59e0b;
-  --amber-2: #ffb020;
-  --amber-soft: rgba(245, 158, 11, 0.14);
-  --green: #f59e0b;
-  --yellow: #ffb020;
-  --red: #f97316;
-  --cyan: #f59e0b;
-  --ink: #15120f;
+  --bg: #070b14;
+  --bg-2: #0d1422;
+  --panel: #111827;
+  --panel-2: #151f32;
+  --panel-3: #0c1220;
+  --line: #27364f;
+  --line-soft: #1b2638;
+  --text: #f6fbff;
+  --muted: #8ea3b8;
+  --amber: #f7d84a;
+  --amber-2: #fff35c;
+  --amber-soft: rgba(247, 216, 74, 0.12);
+  --green: #16d49b;
+  --yellow: #f7d84a;
+  --red: #ff5370;
+  --cyan: #19d3ff;
+  --purple: #8b5cf6;
+  --ink: #071018;
 }
 
 * {
@@ -27,8 +28,12 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 50% -20%, rgba(245, 158, 11, 0.09), transparent 34rem),
+    linear-gradient(rgba(25, 211, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(25, 211, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 18% -12%, rgba(25, 211, 255, 0.16), transparent 28rem),
+    radial-gradient(circle at 90% 10%, rgba(22, 212, 155, 0.11), transparent 24rem),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  background-size: 34px 34px, 34px 34px, auto, auto, auto;
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   display: grid;
@@ -43,7 +48,7 @@ select {
 
 .sidebar {
   border-right: 1px solid var(--line-soft);
-  background: linear-gradient(180deg, #191715 0%, #12100f 100%);
+  background: linear-gradient(180deg, rgba(9, 14, 25, 0.98) 0%, rgba(6, 10, 18, 0.98) 100%);
   padding: 24px 18px;
   position: sticky;
   top: 0;
@@ -63,11 +68,11 @@ select {
   place-items: center;
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, var(--amber-2), var(--amber));
+  background: linear-gradient(135deg, var(--cyan), var(--green));
   color: var(--ink);
   font-weight: 900;
   border-radius: 8px;
-  box-shadow: 0 12px 26px rgba(245, 158, 11, 0.28);
+  box-shadow: 0 12px 26px rgba(25, 211, 255, 0.22);
 }
 
 h1,
@@ -109,8 +114,8 @@ h1 {
 
 .nav button.active,
 .nav button:hover {
-  background: var(--amber-soft);
-  border-color: rgba(245, 158, 11, 0.28);
+  background: rgba(25, 211, 255, 0.1);
+  border-color: rgba(25, 211, 255, 0.28);
   color: var(--text);
 }
 
@@ -126,7 +131,7 @@ h1 {
 }
 
 input[type="range"] {
-  accent-color: var(--amber);
+  accent-color: var(--cyan);
 }
 
 select {
@@ -150,6 +155,30 @@ select {
   margin-bottom: 22px;
 }
 
+.topbar-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.primary-action {
+  background: linear-gradient(135deg, var(--amber-2), var(--green));
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 850;
+  min-width: 160px;
+  padding: 11px 14px;
+  box-shadow: 0 12px 28px rgba(22, 212, 155, 0.18);
+}
+
+.primary-action:disabled {
+  cursor: wait;
+  filter: saturate(0.8);
+  opacity: 0.76;
+}
+
 .eyebrow {
   text-transform: uppercase;
   font-size: 12px;
@@ -169,28 +198,28 @@ select {
   border: 1px solid var(--line);
   padding: 10px 12px;
   border-radius: 8px;
-  background: rgba(41, 37, 36, 0.92);
-  box-shadow: inset 0 1px 0 rgba(255, 247, 237, 0.04);
+  background: rgba(13, 20, 34, 0.92);
+  box-shadow: inset 0 1px 0 rgba(246, 251, 255, 0.04);
 }
 
 .pulse {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--amber);
-  box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.15), 0 0 18px rgba(245, 158, 11, 0.32);
+  background: var(--green);
+  box-shadow: 0 0 0 5px rgba(22, 212, 155, 0.12), 0 0 18px rgba(22, 212, 155, 0.32);
 }
 
 .metrics {
   display: grid;
-  grid-template-columns: 170px 170px minmax(240px, 1fr);
+  grid-template-columns: 150px 150px minmax(220px, 1fr) 150px;
   gap: 12px;
   margin-bottom: 18px;
 }
 
 .metrics div {
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel) 0%, #231f1d 100%);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.94) 0%, rgba(12, 18, 32, 0.96) 100%);
   border-radius: 8px;
   padding: 14px;
   display: grid;
@@ -211,31 +240,18 @@ select {
   margin-bottom: 18px;
 }
 
-.scan-panel {
+.scan-panel,
+.signal-panel,
+.data-health-panel,
+.readiness-panel,
+.opportunity-list,
+.learning-panel {
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(41, 37, 36, 0.98) 0%, rgba(30, 27, 24, 0.98) 100%);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.94) 0%, rgba(10, 15, 27, 0.96) 100%);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 18px;
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
-}
-
-.signal-panel {
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(41, 37, 36, 0.98) 0%, rgba(30, 27, 24, 0.98) 100%);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 18px;
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
-}
-
-.data-health-panel {
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(41, 37, 36, 0.98) 0%, rgba(30, 27, 24, 0.98) 100%);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 18px;
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
 }
 
 .data-health-grid {
@@ -300,7 +316,7 @@ select {
 }
 
 .paper-trade.open {
-  border-color: rgba(245, 158, 11, 0.45);
+  border-color: rgba(22, 212, 155, 0.45);
 }
 
 .readiness-layout {
@@ -353,7 +369,7 @@ select {
 }
 
 .readiness-check.pass > strong {
-  background: var(--amber-2);
+  background: var(--green);
 }
 
 .readiness-check.fail > strong {
@@ -420,7 +436,7 @@ select {
   position: absolute;
   inset: auto 0 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.7), transparent);
+  background: linear-gradient(90deg, transparent, rgba(25, 211, 255, 0.75), transparent);
 }
 
 .scan-candidate div:last-child {
@@ -447,8 +463,8 @@ select {
 }
 
 .list-status button {
-  border: 1px solid rgba(245, 158, 11, 0.38);
-  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(25, 211, 255, 0.36);
+  background: rgba(25, 211, 255, 0.1);
   color: var(--text);
   border-radius: 8px;
   cursor: pointer;
@@ -457,7 +473,7 @@ select {
 }
 
 .list-status button:hover {
-  background: rgba(245, 158, 11, 0.2);
+  background: rgba(25, 211, 255, 0.16);
 }
 
 #opportunities {
@@ -468,7 +484,7 @@ select {
 .ticker-row {
   border: 1px solid var(--line);
   background:
-    linear-gradient(180deg, rgba(51, 47, 44, 0.95), rgba(34, 31, 29, 0.98));
+    linear-gradient(180deg, rgba(21, 31, 50, 0.94), rgba(10, 18, 31, 0.98));
   border-radius: 8px;
   padding: 14px;
   display: grid;
@@ -481,9 +497,9 @@ select {
 
 .ticker-row:hover,
 .ticker-row.selected {
-  border-color: rgba(245, 158, 11, 0.66);
+  border-color: rgba(25, 211, 255, 0.62);
   background:
-    linear-gradient(180deg, rgba(73, 55, 32, 0.8), rgba(35, 31, 28, 0.98));
+    linear-gradient(180deg, rgba(18, 58, 73, 0.72), rgba(11, 20, 34, 0.98));
 }
 
 .symbol {
@@ -507,9 +523,9 @@ select {
 }
 
 .data-badge.trusted {
-  background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: var(--amber-2);
+  background: rgba(22, 212, 155, 0.12);
+  border: 1px solid rgba(22, 212, 155, 0.35);
+  color: var(--green);
 }
 
 .data-badge.delayed {
@@ -534,9 +550,9 @@ select {
 }
 
 .catalyst-badge.bullish {
-  background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: var(--amber-2);
+  background: rgba(22, 212, 155, 0.12);
+  border: 1px solid rgba(22, 212, 155, 0.35);
+  color: var(--green);
 }
 
 .catalyst-badge.bearish {
@@ -562,9 +578,9 @@ select {
 }
 
 .setup-badge.vwap {
-  background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: var(--amber-2);
+  background: rgba(25, 211, 255, 0.12);
+  border: 1px solid rgba(25, 211, 255, 0.35);
+  color: var(--cyan);
 }
 
 .setup-badge.breakout,
@@ -588,10 +604,10 @@ select {
 }
 
 .chip {
-  border: 1px solid rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(25, 211, 255, 0.18);
   border-radius: 999px;
   color: #d6d3d1;
-  background: rgba(245, 158, 11, 0.07);
+  background: rgba(25, 211, 255, 0.07);
   padding: 4px 8px;
   font-size: 12px;
   max-width: 100%;
@@ -629,7 +645,7 @@ select {
 }
 
 .decision.signal {
-  color: var(--amber-2);
+  color: var(--green);
 }
 
 .decision.watch {
@@ -642,7 +658,7 @@ select {
 
 .probability {
   display: block;
-  color: var(--amber);
+  color: var(--cyan);
   font-size: 12px;
   margin-top: 4px;
 }
@@ -651,7 +667,7 @@ select {
   position: sticky;
   top: 24px;
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel) 0%, #211d1b 100%);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.97) 0%, rgba(10, 15, 27, 0.98) 100%);
   border-radius: 8px;
   padding: 16px;
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.24);
@@ -678,7 +694,7 @@ select {
 .price {
   font-size: 24px;
   font-weight: 800;
-  color: var(--amber-2);
+  color: var(--green);
 }
 
 .detail-grid {
@@ -784,7 +800,7 @@ select {
 
 .catalyst-item {
   border: 1px solid var(--line);
-  background: rgba(51, 47, 44, 0.6);
+  background: rgba(21, 31, 50, 0.6);
   border-radius: 8px;
   padding: 10px;
   display: flex;
@@ -793,7 +809,7 @@ select {
 }
 
 .catalyst-item a {
-  color: var(--amber-2);
+  color: var(--cyan);
   font-size: 12px;
   text-decoration: none;
   white-space: nowrap;
@@ -813,9 +829,9 @@ select {
 }
 
 .gate-check .confirm {
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  color: #fed7aa;
+  background: rgba(22, 212, 155, 0.12);
+  border: 1px solid rgba(22, 212, 155, 0.3);
+  color: #a7f3d0;
 }
 
 .gate-check .blocker {
@@ -830,7 +846,7 @@ select {
 
 .learning-panel {
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(41, 37, 36, 0.98), rgba(30, 27, 24, 0.98));
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.94), rgba(10, 15, 27, 0.96));
   border-radius: 8px;
   padding: 16px;
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
@@ -871,7 +887,7 @@ select {
   display: block;
   font-size: 20px;
   margin-bottom: 8px;
-  color: var(--amber-2);
+  color: var(--cyan);
 }
 
 .journal-section {
@@ -895,7 +911,7 @@ select {
 }
 
 .journal-entry.open {
-  border-color: rgba(245, 158, 11, 0.45);
+  border-color: rgba(22, 212, 155, 0.45);
 }
 
 .journal-entry span {

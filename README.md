@@ -64,12 +64,14 @@ POLYGON_INIT_SYMBOL_LIMIT=5
 POLYGON_FETCH_INTERVAL_MS=60000
 MARKET_UPDATE_INTERVAL_MS=60000
 ENABLE_CONTINUOUS_RESEARCH=false
+RUN_SCAN_ON_STARTUP=false
 MARKET_SYMBOLS=NVDA,AMD,TSLA,PLTR,SOFI,COIN,SMCI,RIVN,HOOD,MSTR
 ```
 
 The free stock plan has tight call limits, so the provider only tries a small real-data seed by default and uses mock fallback for the rest. Increase `POLYGON_INIT_SYMBOL_LIMIT` only if your plan can handle the extra requests.
 `MARKET_UPDATE_INTERVAL_MS` controls how often the full research and signal loop reruns after startup. Keep it near 60000 on free data plans so the dashboard stays responsive while heavier company research runs.
 `ENABLE_CONTINUOUS_RESEARCH=false` keeps the dashboard responsive after the startup snapshot. Set it to `true` only after the research loop is moved to a background worker, or when you are okay with local refreshes temporarily slowing the page.
+`RUN_SCAN_ON_STARTUP=false` lets the UI open immediately. Use the dashboard button to start the first research scan when you are ready.
 
 ## Catalyst Research
 

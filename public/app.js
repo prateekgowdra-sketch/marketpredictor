@@ -12,6 +12,8 @@ const marketToneEl = document.querySelector("#marketTone");
 const highCountEl = document.querySelector("#highCount");
 const avgScoreEl = document.querySelector("#avgScore");
 const leadersEl = document.querySelector("#leaders");
+const scanStateEl = document.querySelector("#scanState");
+const runResearchScanEl = document.querySelector("#runResearchScan");
 const dataProviderEl = document.querySelector("#dataProvider");
 const trustedDataCountEl = document.querySelector("#trustedDataCount");
 const delayedDataCountEl = document.querySelector("#delayedDataCount");
@@ -58,6 +60,7 @@ let lastDetailRefresh = 0;
 let renderedDetailKey = null;
 let listHasNewData = false;
 let detailHasNewData = false;
+let scanStatus = null;
 
 const RANKED_REFRESH_MS = 10000;
 const DETAIL_REFRESH_MS = 10000;
@@ -179,6 +182,17 @@ function renderSummary() {
   avgScoreEl.textContent = snapshot.summary.averageScore.toFixed(1);
   leadersEl.textContent = snapshot.summary.leadingSectors.join(", ") || "-";
   lastUpdatedEl.textContent = new Date(snapshot.generatedAt).toLocaleTimeString();
+}
+
+function renderScanStatus() {
+  const state = scanStatus?.state ?? (snapshot?.provider === "loading" ? "starting" : "idle");
+  const isBusy = state === "running" || state === "starting" || state === "queued";
+  const label =
+    state === "running" ? "Running" : state === "starting" ? "Starting" : state === "queued" ? "Queued" : state === "error" ? "Error" : "Idle";
+  scanStateEl.textContent = label;
+  runResearchScanEl.disabled = isBusy;
+  runResearchScanEl.textContent = isBusy ? "Scan Running" : "Run Research Scan";
+  runResearchScanEl.classList.toggle("is-running", isBusy);
 }
 
 function renderDataHealth() {
@@ -534,6 +548,7 @@ function renderPaperJournal(trades) {
 function render() {
   if (!snapshot) return;
   renderSummary();
+  renderScanStatus();
   renderDataHealth();
   renderSignalGate();
   renderPaperReadiness();
@@ -551,6 +566,20 @@ scoreFilterEl.addEventListener("input", () => {
 priorityFilterEl.addEventListener("change", render);
 refreshListEl.addEventListener("click", refreshRankedList);
 refreshDetailEl.addEventListener("click", refreshDetail);
+runResearchScanEl.addEventListener("click", async () => {
+  runResearchScanEl.disabled = true;
+  runResearchScanEl.textContent = "Starting Scan";
+  try {
+    const response = await fetch("/api/run-scan", { method: "POST" });
+    const payload = await response.json();
+    scanStatus = payload.status;
+    renderScanStatus();
+  } catch {
+    scanStateEl.textContent = "Error";
+    runResearchScanEl.disabled = false;
+    runResearchScanEl.textContent = "Run Research Scan";
+  }
+});
 
 const events = new EventSource("/events");
 events.onmessage = (event) => {
@@ -577,6 +606,7 @@ events.onmessage = (event) => {
     detailPriorityEl.textContent = detailStatusText(detailOpportunity);
   }
   renderSummary();
+  renderScanStatus();
   renderDataHealth();
   renderSignalGate();
   renderPaperReadiness();
@@ -600,5 +630,18 @@ async function refreshBacktest() {
   }
 }
 
+async function refreshScanStatus() {
+  try {
+    const response = await fetch("/api/scan-status");
+    if (!response.ok) return;
+    scanStatus = await response.json();
+    renderScanStatus();
+  } catch {
+    scanStateEl.textContent = "Offline";
+  }
+}
+
 refreshBacktest();
+refreshScanStatus();
 setInterval(refreshBacktest, 5000);
+setInterval(refreshScanStatus, 3000);

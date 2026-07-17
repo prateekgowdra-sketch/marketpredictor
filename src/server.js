@@ -1,8 +1,8 @@
 import http from "node:http";
+import { fork } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { loadEnv } from "./config.js";
-import { MarketEngine } from "./marketData.js";
 import { getBacktestSummary } from "./backtest.js";
 import {
   getPaperTradeStats,
@@ -17,11 +17,19 @@ loadEnv();
 const port = Number(process.env.PORT ?? 3001);
 const updateIntervalMs = Number(process.env.MARKET_UPDATE_INTERVAL_MS ?? 60000);
 const continuousResearch = process.env.ENABLE_CONTINUOUS_RESEARCH === "true";
+const scanOnStartup = process.env.RUN_SCAN_ON_STARTUP === "true";
 const publicDir = path.join(process.cwd(), "public");
-const engine = await MarketEngine.create();
 const clients = new Set();
-let latestSnapshot = await engine.next();
-let updateInFlight = false;
+let latestSnapshot = createBootSnapshot();
+let scanProcess = null;
+let scanStatus = {
+  state: scanOnStartup || continuousResearch ? "starting" : "idle",
+  lastStartedAt: null,
+  lastCompletedAt: null,
+  lastError: null,
+  reason: scanOnStartup || continuousResearch ? "startup" : "manual",
+  continuous: continuousResearch
+};
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -33,6 +41,58 @@ const contentTypes = {
 function sendJson(response, payload) {
   response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(payload));
+}
+
+function createBootSnapshot() {
+  return {
+    tick: 0,
+    provider: "loading",
+    dataHealth: {
+      provider: "loading",
+      trackedSymbols: 0,
+      realSymbols: 0,
+      fallbackSymbols: 0,
+      delayedSymbols: 0,
+      rateLimitSkips: 0,
+      requestFailures: 0,
+      note: "Market engine is warming up. Run a research scan if results do not appear automatically."
+    },
+    generatedAt: new Date().toISOString(),
+    summary: {
+      highPriorityCount: 0,
+      averageScore: 0,
+      leadingSectors: [],
+      marketTone: "Research engine warming up"
+    },
+    scan: {
+      generatedAt: new Date().toISOString(),
+      universeSize: 0,
+      activeTracked: 0,
+      deepCandidateCount: 0,
+      candidates: []
+    },
+    signalSummary: { Signal: 0, Watch: 0, Reject: 0, actionRate: 0 },
+    paperReadiness: {
+      ready: false,
+      readyCount: 0,
+      checkedCount: 0,
+      closest: null,
+      candidates: [],
+      note: "Waiting for the first research scan."
+    },
+    paper: {
+      generatedAt: new Date().toISOString(),
+      stats: getPaperTradeStats(),
+      openTrades: [],
+      recentTrades: getRecentPaperTrades(20)
+    },
+    opportunities: []
+  };
+}
+
+function broadcastSnapshot() {
+  const payload = `data: ${JSON.stringify(latestSnapshot)}\n\n`;
+  for (const client of clients) client.write(payload);
 }
 
 async function serveStatic(request, response) {
@@ -81,6 +141,35 @@ const server = http.createServer(async (request, response) => {
 
   if (url.pathname === "/api/scan") {
     sendJson(response, latestSnapshot.scan ?? { error: "Scan not ready" });
+    return;
+  }
+
+  if (url.pathname === "/api/scan-status") {
+    sendJson(response, scanStatus);
+    return;
+  }
+
+  if (url.pathname === "/api/run-scan") {
+    if (request.method !== "POST") {
+      response.writeHead(405, { Allow: "POST" });
+      response.end("Method Not Allowed");
+      return;
+    }
+    const accepted = !scanProcess && !["queued", "running"].includes(scanStatus.state);
+    if (accepted) {
+      scanStatus = {
+        ...scanStatus,
+        state: "queued",
+        lastError: null,
+        reason: "manual"
+      };
+      setTimeout(() => startMarketUpdate("manual"), 0);
+    }
+    sendJson(response, {
+      accepted,
+      status: scanStatus,
+      message: accepted ? "Research scan queued." : "Research scan is already running."
+    });
     return;
   }
 
@@ -138,24 +227,72 @@ const server = http.createServer(async (request, response) => {
   await serveStatic(request, response);
 });
 
-async function runMarketUpdate() {
-  if (updateInFlight) return;
-  updateInFlight = true;
-  try {
-    latestSnapshot = await engine.next();
-    const payload = `data: ${JSON.stringify(latestSnapshot)}\n\n`;
-    for (const client of clients) client.write(payload);
-  } catch (error) {
-    console.error(`Market update skipped: ${error.message}`);
-  } finally {
-    updateInFlight = false;
-    setTimeout(runMarketUpdate, updateIntervalMs);
-  }
+function startMarketUpdate(reason = "manual") {
+  if (scanProcess) return false;
+  runMarketUpdate(reason);
+  return true;
+}
+
+function runMarketUpdate(reason = "manual") {
+  scanStatus = {
+    ...scanStatus,
+    state: "running",
+    lastStartedAt: new Date().toISOString(),
+    lastError: null,
+    reason
+  };
+  scanProcess = fork(path.join(process.cwd(), "src/scanWorker.js"), [], { silent: true });
+
+  scanProcess.stdout?.on("data", (chunk) => {
+    process.stdout.write(chunk);
+  });
+  scanProcess.stderr?.on("data", (chunk) => {
+    process.stderr.write(chunk);
+  });
+
+  scanProcess.on("message", (message) => {
+    if (message.type === "snapshot") {
+      latestSnapshot = message.snapshot;
+      scanStatus = {
+        ...scanStatus,
+        state: "idle",
+        lastCompletedAt: new Date().toISOString(),
+        lastError: null
+      };
+      broadcastSnapshot();
+    }
+
+    if (message.type === "error") {
+      scanStatus = {
+        ...scanStatus,
+        state: "error",
+        lastError: message.error,
+        lastCompletedAt: new Date().toISOString()
+      };
+      console.error(`Market update skipped: ${message.error}`);
+    }
+  });
+
+  scanProcess.on("exit", (code) => {
+    if (scanStatus.state === "running") {
+      scanStatus = {
+        ...scanStatus,
+        state: code === 0 ? "idle" : "error",
+        lastError: code === 0 ? null : `Scan worker exited with code ${code}`,
+        lastCompletedAt: new Date().toISOString()
+      };
+    }
+    scanProcess = null;
+    if (continuousResearch) {
+      setTimeout(() => runMarketUpdate("scheduled"), updateIntervalMs);
+    }
+  });
+  return true;
 }
 
 server.listen(port, () => {
   console.log(`Market Predictor running at http://localhost:${port}`);
-  if (continuousResearch) {
-    setTimeout(runMarketUpdate, updateIntervalMs);
+  if (scanOnStartup || continuousResearch) {
+    setTimeout(() => startMarketUpdate("startup"), 1000);
   }
 });

@@ -91,6 +91,7 @@ h1 {
 .status,
 .metrics span,
 .section-heading span,
+.section-subtitle,
 .control-panel,
 .meta {
   color: var(--muted);
@@ -990,6 +991,161 @@ select {
   font-size: 20px;
 }
 
+.section-subtitle {
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.lab-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 14px 0 12px;
+}
+
+.lab-grid div,
+.performance-metrics div {
+  background: linear-gradient(180deg, rgba(21, 31, 50, 0.94), rgba(12, 18, 32, 0.96));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.lab-grid span,
+.performance-metrics span,
+.chart-heading span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+}
+
+.lab-grid strong,
+.performance-metrics strong {
+  color: var(--text);
+  display: block;
+  font-size: 22px;
+  margin: 4px 0;
+}
+
+.lab-grid small {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+}
+
+.performance-board {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1.65fr) minmax(220px, 0.55fr);
+  margin-bottom: 12px;
+}
+
+.return-chart-card {
+  background:
+    linear-gradient(rgba(25, 211, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(25, 211, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(12, 18, 32, 0.98), rgba(7, 11, 20, 0.98));
+  background-size: 28px 28px, 28px 28px, auto;
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.chart-heading {
+  align-items: start;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.chart-heading strong {
+  display: block;
+  font-size: 18px;
+  margin-top: 3px;
+}
+
+.chart-heading > span {
+  border: 1px solid rgba(247, 216, 74, 0.24);
+  border-radius: 999px;
+  color: var(--yellow);
+  padding: 6px 9px;
+  text-align: right;
+}
+
+.curve-chart {
+  aspect-ratio: 16 / 6;
+  min-height: 230px;
+  width: 100%;
+}
+
+.curve-chart svg {
+  display: block;
+  height: 100%;
+  overflow: visible;
+  width: 100%;
+}
+
+.chart-bg {
+  fill: rgba(7, 11, 20, 0.34);
+}
+
+.chart-grid-line {
+  stroke: rgba(142, 163, 184, 0.14);
+  stroke-width: 1;
+}
+
+.chart-zero-line {
+  stroke: rgba(247, 216, 74, 0.4);
+  stroke-dasharray: 5 5;
+  stroke-width: 1.25;
+}
+
+.benchmark-line {
+  fill: none;
+  stroke: rgba(247, 216, 74, 0.78);
+  stroke-width: 2.2;
+}
+
+.strategy-line {
+  fill: none;
+  filter: drop-shadow(0 0 8px rgba(25, 211, 255, 0.34));
+  stroke: url("#strategyLineGlow");
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.strategy-dot {
+  fill: var(--green);
+  stroke: var(--text);
+  stroke-width: 1.4;
+}
+
+.chart-axis-label,
+.chart-final-label {
+  fill: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.chart-final-label {
+  fill: var(--cyan);
+  font-size: 13px;
+}
+
+.performance-metrics {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+}
+
+.performance-metrics strong {
+  color: var(--cyan);
+  font-size: 28px;
+}
+
 .report-actions {
   align-items: center;
   display: flex;
@@ -1153,6 +1309,9 @@ select {
   .scan-metrics,
   .scan-candidates,
   .learning-grid,
+  .lab-grid,
+  .performance-board,
+  .performance-metrics,
   .strategy-grid,
   .outcome-stats,
   .journal-entry,

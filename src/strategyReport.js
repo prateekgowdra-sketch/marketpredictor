@@ -48,6 +48,35 @@ function groupBySetup(trades) {
     .sort((a, b) => b.closed - a.closed || b.winRate - a.winRate);
 }
 
+function buildEquityCurve(trades) {
+  const closedTrades = trades
+    .filter((trade) => trade.status === "closed")
+    .slice()
+    .sort((a, b) => new Date(a.closedAt ?? a.openedAt) - new Date(b.closedAt ?? b.openedAt));
+  let cumulativeReturn = 0;
+
+  const points = [
+    {
+      ts: closedTrades[0]?.openedAt ?? new Date().toISOString(),
+      cumulativeReturn: 0,
+      benchmarkReturn: 0,
+      label: "Start"
+    }
+  ];
+
+  for (const trade of closedTrades) {
+    cumulativeReturn += trade.pnlPct ?? 0;
+    points.push({
+      ts: trade.closedAt ?? trade.openedAt,
+      cumulativeReturn,
+      benchmarkReturn: 0,
+      label: trade.symbol
+    });
+  }
+
+  return points;
+}
+
 export function buildStrategyReport(limit = 1000) {
   const trades = getPaperTradesForReport(limit);
   const currentFormatTrades = trades.filter((trade) => trade.setup && trade.research && trade.dataQuality);
@@ -68,6 +97,18 @@ export function buildStrategyReport(limit = 1000) {
     legacyIgnored: trades.length - currentFormatTrades.length,
     strict: summarizeTrades(strictTrades),
     simulation: simulationSummary,
+    lab: {
+      storage: "data/market-predictor.sqlite",
+      artifactsSaved: currentFormatTrades.length,
+      decisionsExportable: trades.length,
+      closedForMetrics: simulationSummary.closed,
+      openTrades: simulationSummary.open,
+      dataModes: {
+        strict: strictTrades.length,
+        simulation: simulationTrades.length
+      }
+    },
+    equityCurve: buildEquityCurve(simulationTrades),
     invalidatedCount: invalidatedTrades.length,
     bySetup: groupBySetup(currentFormatTrades),
     recentReviews: currentFormatTrades.slice(0, 12).map((trade) => ({

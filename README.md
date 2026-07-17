@@ -80,6 +80,8 @@ Paper trade history, realized P/L, setup details, and simulation review notes ar
 - `/api/paper-trades/export.csv` for spreadsheets.
 - `/api/paper-trades/export.json` for complete nested trade/review data.
 
+The Strategy Report is the controlled research lab view. It shows saved artifacts, strict-vs-simulation split, closed trades available for metrics, exportable journal rows, and a cumulative simulation return curve. The curve only becomes meaningful after trades close; open trades are stored but do not count as proof.
+
 ## Catalyst Research
 
 The research engine can pull real catalyst context from Polygon/Massive news, SEC EDGAR filings, and optional Finnhub earnings calendar data:

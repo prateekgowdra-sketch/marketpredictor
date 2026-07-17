@@ -37,6 +37,16 @@ const paperMaxDailyEl = document.querySelector("#paperMaxDaily");
 const savePaperControlsEl = document.querySelector("#savePaperControls");
 const paperControlNoteEl = document.querySelector("#paperControlNote");
 const strategySampleSizeEl = document.querySelector("#strategySampleSize");
+const labArtifactsSavedEl = document.querySelector("#labArtifactsSaved");
+const labClosedTradesEl = document.querySelector("#labClosedTrades");
+const labModeSplitEl = document.querySelector("#labModeSplit");
+const labStorageStateEl = document.querySelector("#labStorageState");
+const labChartStatusEl = document.querySelector("#labChartStatus");
+const strategyCurveChartEl = document.querySelector("#strategyCurveChart");
+const simTotalReturnEl = document.querySelector("#simTotalReturn");
+const simOpenTradesEl = document.querySelector("#simOpenTrades");
+const simClosedTradesEl = document.querySelector("#simClosedTrades");
+const labExportRowsEl = document.querySelector("#labExportRows");
 const simWinRateEl = document.querySelector("#simWinRate");
 const simProfitFactorEl = document.querySelector("#simProfitFactor");
 const simDrawdownEl = document.querySelector("#simDrawdown");
@@ -116,6 +126,60 @@ function ratio(value) {
   if (value === Infinity) return "∞";
   if (!Number.isFinite(value)) return "0.00";
   return value.toFixed(2);
+}
+
+function renderCurveChart(points = []) {
+  const width = 760;
+  const height = 280;
+  const pad = { top: 22, right: 28, bottom: 42, left: 58 };
+  const plotWidth = width - pad.left - pad.right;
+  const plotHeight = height - pad.top - pad.bottom;
+  const usable = points.length > 1 ? points : [
+    { cumulativeReturn: 0, benchmarkReturn: 0, label: "Start" },
+    { cumulativeReturn: 0, benchmarkReturn: 0, label: "Waiting" }
+  ];
+  const values = usable.flatMap((point) => [point.cumulativeReturn ?? 0, point.benchmarkReturn ?? 0]);
+  const minValue = Math.min(-0.02, ...values);
+  const maxValue = Math.max(0.02, ...values);
+  const range = maxValue - minValue || 1;
+  const x = (index) => pad.left + (usable.length === 1 ? 0 : (index / (usable.length - 1)) * plotWidth);
+  const y = (value) => pad.top + ((maxValue - value) / range) * plotHeight;
+  const pathFor = (key) =>
+    usable
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${x(index).toFixed(2)} ${y(point[key] ?? 0).toFixed(2)}`)
+      .join(" ");
+  const ticks = [maxValue, (maxValue + minValue) / 2, minValue];
+  const finalReturn = usable.at(-1)?.cumulativeReturn ?? 0;
+  const finalLabel = points.length > 1 ? signedPct(finalReturn) : "Need closed trades";
+
+  strategyCurveChartEl.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="strategyLineGlow" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="var(--cyan)" />
+          <stop offset="100%" stop-color="var(--green)" />
+        </linearGradient>
+      </defs>
+      <rect class="chart-bg" x="0" y="0" width="${width}" height="${height}" rx="8"></rect>
+      ${ticks
+        .map(
+          (tick) => `
+            <g>
+              <line class="chart-grid-line" x1="${pad.left}" x2="${width - pad.right}" y1="${y(tick).toFixed(2)}" y2="${y(tick).toFixed(2)}"></line>
+              <text class="chart-axis-label" x="14" y="${(y(tick) + 4).toFixed(2)}">${pct(tick)}</text>
+            </g>
+          `
+        )
+        .join("")}
+      <line class="chart-zero-line" x1="${pad.left}" x2="${width - pad.right}" y1="${y(0).toFixed(2)}" y2="${y(0).toFixed(2)}"></line>
+      <path class="benchmark-line" d="${pathFor("benchmarkReturn")}"></path>
+      <path class="strategy-line" d="${pathFor("cumulativeReturn")}"></path>
+      <circle class="strategy-dot" cx="${x(usable.length - 1).toFixed(2)}" cy="${y(finalReturn).toFixed(2)}" r="4"></circle>
+      <text class="chart-final-label" x="${width - pad.right - 120}" y="${pad.top + 18}">${finalLabel}</text>
+      <text class="chart-axis-label" x="${pad.left}" y="${height - 14}">Start</text>
+      <text class="chart-axis-label" x="${width - pad.right - 84}" y="${height - 14}">Latest close</text>
+    </svg>
+  `;
 }
 
 function priorityClass(priority) {
@@ -332,15 +396,28 @@ function renderPaperControls(controls, note = null) {
 function renderStrategyReport() {
   if (!strategyReport) return;
   const simulation = strategyReport.simulation ?? {};
+  const lab = strategyReport.lab ?? {};
   const setups = strategyReport.bySetup ?? [];
   const reviews = strategyReport.recentReviews ?? [];
+  const curve = strategyReport.equityCurve ?? [];
 
   strategySampleSizeEl.textContent = `${strategyReport.sampleSize ?? 0} trades`;
+  labArtifactsSavedEl.textContent = lab.artifactsSaved ?? strategyReport.sampleSize ?? 0;
+  labClosedTradesEl.textContent = lab.closedForMetrics ?? simulation.closed ?? 0;
+  labModeSplitEl.textContent = `${lab.dataModes?.strict ?? 0} / ${lab.dataModes?.simulation ?? 0}`;
+  labStorageStateEl.textContent = lab.storage ? "Saved" : "Waiting";
+  labChartStatusEl.textContent =
+    (simulation.closed ?? 0) > 0 ? `${simulation.closed} closed trades plotted` : "Waiting for closed trades";
+  simTotalReturnEl.textContent = signedPct(curve.at(-1)?.cumulativeReturn ?? 0);
+  simOpenTradesEl.textContent = simulation.open ?? 0;
+  simClosedTradesEl.textContent = simulation.closed ?? 0;
+  labExportRowsEl.textContent = lab.decisionsExportable ?? 0;
   simWinRateEl.textContent = pct(simulation.winRate ?? 0);
   simProfitFactorEl.textContent = ratio(simulation.profitFactor ?? 0);
   simDrawdownEl.textContent = signedPct(simulation.maxDrawdown ?? 0);
   invalidatedTradesEl.textContent = strategyReport.invalidatedCount ?? 0;
   strategyNoteEl.textContent = strategyReport.note ?? "Waiting for strategy data.";
+  renderCurveChart(curve);
 
   setupReportCountEl.textContent = setups.length;
   setupReportListEl.innerHTML =

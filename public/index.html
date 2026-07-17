@@ -166,12 +166,67 @@
 
       <section class="strategy-report-panel">
         <div class="section-heading">
-          <h3>Strategy Report</h3>
+          <div>
+            <h3>Controlled Trading Research Lab</h3>
+            <p class="section-subtitle">Every simulated decision is stored, explainable, testable, and exportable.</p>
+          </div>
           <div class="report-actions">
             <a href="/api/paper-trades/export.csv" download>CSV</a>
             <a href="/api/paper-trades/export.json" download>JSON</a>
             <span id="strategySampleSize">0 trades</span>
           </div>
+        </div>
+        <div class="lab-grid">
+          <div>
+            <span>Artifacts Saved</span>
+            <strong id="labArtifactsSaved">0</strong>
+            <small>current-format decisions</small>
+          </div>
+          <div>
+            <span>Closed For Metrics</span>
+            <strong id="labClosedTrades">0</strong>
+            <small>needed for proof</small>
+          </div>
+          <div>
+            <span>Mode Split</span>
+            <strong id="labModeSplit">0 / 0</strong>
+            <small>strict / simulation</small>
+          </div>
+          <div>
+            <span>Storage</span>
+            <strong id="labStorageState">SQLite</strong>
+            <small>local durable journal</small>
+          </div>
+        </div>
+        <div class="performance-board">
+          <section class="return-chart-card">
+            <div class="chart-heading">
+              <div>
+                <span>Simulation Return Curve</span>
+                <strong>Strategy vs Baseline</strong>
+              </div>
+              <span id="labChartStatus">Waiting for closed trades</span>
+            </div>
+            <div id="strategyCurveChart" class="curve-chart" role="img" aria-label="Simulation cumulative return chart"></div>
+          </section>
+          <aside class="performance-metrics">
+            <div>
+              <span>Total Sim Return</span>
+              <strong id="simTotalReturn">0.00%</strong>
+            </div>
+            <div>
+              <span>Open Trades</span>
+              <strong id="simOpenTrades">0</strong>
+            </div>
+            <div>
+              <span>Closed Trades</span>
+              <strong id="simClosedTrades">0</strong>
+            </div>
+            <div>
+              <span>Exported Rows</span>
+              <strong id="labExportRows">0</strong>
+            </div>
+          </aside>
         </div>
         <div class="strategy-grid">
           <div>

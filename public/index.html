@@ -125,6 +125,41 @@
         <div id="paperTrades" class="paper-trades"></div>
       </section>
 
+      <section class="paper-control-panel">
+        <div class="section-heading">
+          <h3>Paper Trading Controls</h3>
+          <span id="paperControlState">Off</span>
+        </div>
+        <div class="control-strip">
+          <label class="toggle-row">
+            <input id="paperEnabled" type="checkbox" />
+            <span>Enable paper trading</span>
+          </label>
+          <label>
+            Account size
+            <input id="paperAccountSize" type="number" min="100" step="100" />
+          </label>
+          <label>
+            Risk per trade %
+            <input id="paperRiskPct" type="number" min="0.01" max="5" step="0.01" />
+          </label>
+          <label>
+            Max position
+            <input id="paperMaxPosition" type="number" min="10" step="50" />
+          </label>
+          <label>
+            Max open
+            <input id="paperMaxOpen" type="number" min="1" step="1" />
+          </label>
+          <label>
+            Max trades/day
+            <input id="paperMaxDaily" type="number" min="1" step="1" />
+          </label>
+          <button id="savePaperControls" class="secondary-action" type="button">Save Controls</button>
+        </div>
+        <p id="paperControlNote" class="meta">Paper trading is off until you enable it. Real-data and catalyst gates still apply.</p>
+      </section>
+
       <section class="readiness-panel">
         <div class="section-heading">
           <h3>Paper Trading Readiness</h3>

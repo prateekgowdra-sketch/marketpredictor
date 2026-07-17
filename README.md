@@ -73,6 +73,8 @@ The free stock plan has tight call limits, so the provider only tries a small re
 `ENABLE_CONTINUOUS_RESEARCH=false` keeps the dashboard responsive after the startup snapshot. Set it to `true` only after the research loop is moved to a background worker, or when you are okay with local refreshes temporarily slowing the page.
 `RUN_SCAN_ON_STARTUP=false` lets the UI open immediately. Use the dashboard button to start the first research scan when you are ready.
 
+Paper trading is controlled from the dashboard and is saved to `data/paper-controls.json`. It defaults to off. The controls set account size, risk per trade, max position size, max open trades, and max trades per day. Even when enabled, the app still blocks trades unless trusted real-time data, a real catalyst, a clean setup, ML, risk, and reward/risk checks all pass.
+
 ## Catalyst Research
 
 The research engine can pull real catalyst context from Polygon/Massive news, SEC EDGAR filings, and optional Finnhub earnings calendar data:

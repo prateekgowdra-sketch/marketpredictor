@@ -244,6 +244,7 @@ select {
 .signal-panel,
 .data-health-panel,
 .readiness-panel,
+.paper-control-panel,
 .opportunity-list,
 .learning-panel {
   border: 1px solid var(--line);
@@ -252,6 +253,78 @@ select {
   padding: 16px;
   margin-bottom: 18px;
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+.control-strip {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1.1fr repeat(5, minmax(110px, 1fr)) 130px;
+}
+
+.control-strip label {
+  color: var(--muted);
+  display: grid;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.control-strip input[type="number"] {
+  background: var(--panel-3);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  min-width: 0;
+  padding: 10px;
+}
+
+.toggle-row {
+  align-items: center;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex !important;
+  gap: 9px !important;
+  min-height: 39px;
+  padding: 10px;
+}
+
+.toggle-row input {
+  accent-color: var(--green);
+}
+
+.secondary-action {
+  background: rgba(25, 211, 255, 0.1);
+  border: 1px solid rgba(25, 211, 255, 0.38);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 10px 12px;
+}
+
+.secondary-action:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.state-pill {
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+  padding: 5px 9px;
+}
+
+.state-pill.armed {
+  background: rgba(22, 212, 155, 0.12);
+  border: 1px solid rgba(22, 212, 155, 0.35);
+  color: var(--green);
+}
+
+.state-pill.blocked {
+  background: rgba(255, 83, 112, 0.11);
+  border: 1px solid rgba(255, 83, 112, 0.28);
+  color: #ff9aad;
 }
 
 .data-health-grid {
@@ -976,6 +1049,7 @@ select {
 
   .workspace,
   .metrics,
+  .control-strip,
   .data-health-grid,
   .signal-grid,
   .readiness-layout,

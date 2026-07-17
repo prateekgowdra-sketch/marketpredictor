@@ -1,11 +1,21 @@
-import { getPaperTradeStats, getRecentPaperTrades, savePaperTrade, updatePaperTrade } from "./database.js";
+import {
+  getPaperTradeStats,
+  getPaperTradesOpenedSince,
+  getRecentPaperTrades,
+  savePaperTrade,
+  updatePaperTrade
+} from "./database.js";
 
 export class PaperTrader {
   constructor() {
     this.openTrades = new Map();
-    this.notional = Number(process.env.PAPER_TRADE_NOTIONAL ?? 1000);
+    this.enabled = process.env.PAPER_TRADING_ENABLED === "true";
+    this.accountSize = Number(process.env.PAPER_ACCOUNT_SIZE ?? 10000);
+    this.riskPerTradePct = Number(process.env.PAPER_RISK_PER_TRADE_PCT ?? 0.005);
+    this.maxPositionNotional = Number(process.env.PAPER_MAX_POSITION_NOTIONAL ?? process.env.PAPER_TRADE_NOTIONAL ?? 1000);
     this.maxTicksHeld = Number(process.env.PAPER_TRADE_MAX_TICKS ?? 90);
     this.maxOpenTrades = Number(process.env.PAPER_TRADE_MAX_OPEN ?? 5);
+    this.maxTradesPerDay = Number(process.env.PAPER_TRADE_MAX_DAILY ?? 5);
   }
 
   syncFromDatabase() {
@@ -25,8 +35,13 @@ export class PaperTrader {
       this.updateOpenTrade(trade, opportunity, tick);
     }
 
+    if (!this.enabled) {
+      return this.summary("Paper trading is off in controls.");
+    }
+
     for (const opportunity of opportunities) {
       if (this.openTrades.size >= this.maxOpenTrades) break;
+      if (this.tradesOpenedToday() >= this.maxTradesPerDay) break;
       if (opportunity.signalDecision?.label !== "Signal") continue;
       if (!opportunity.dataQuality?.isRealTimeTrusted) continue;
       if (!opportunity.researchSummary?.hasRealCatalyst) continue;
@@ -38,7 +53,12 @@ export class PaperTrader {
   }
 
   openTrade(opportunity) {
-    const quantity = this.notional / opportunity.price;
+    const perShareRisk = Math.max(0.01, Math.abs(opportunity.price - opportunity.stop));
+    const riskDollars = this.accountSize * this.riskPerTradePct;
+    const riskSizedQuantity = riskDollars / perShareRisk;
+    const notionalCappedQuantity = this.maxPositionNotional / opportunity.price;
+    const quantity = Math.max(0, Math.min(riskSizedQuantity, notionalCappedQuantity));
+    const notional = quantity * opportunity.price;
     const trade = {
       symbol: opportunity.symbol,
       signalId: opportunity.signalId ?? null,
@@ -46,7 +66,7 @@ export class PaperTrader {
       status: "open",
       entryPrice: opportunity.price,
       quantity,
-      notional: this.notional,
+      notional,
       stop: opportunity.stop,
       target: opportunity.target,
       pnlPct: 0,
@@ -90,9 +110,26 @@ export class PaperTrader {
     }
   }
 
-  summary() {
+  tradesOpenedToday() {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    return getPaperTradesOpenedSince(start.toISOString());
+  }
+
+  summary(note = null) {
     return {
       generatedAt: new Date().toISOString(),
+      controls: {
+        enabled: this.enabled,
+        accountSize: this.accountSize,
+        riskPerTradePct: this.riskPerTradePct,
+        maxPositionNotional: this.maxPositionNotional,
+        maxOpenTrades: this.maxOpenTrades,
+        maxTradesPerDay: this.maxTradesPerDay,
+        maxTicksHeld: this.maxTicksHeld,
+        tradesOpenedToday: this.tradesOpenedToday()
+      },
+      note,
       stats: getPaperTradeStats(),
       openTrades: [...this.openTrades.values()].sort((a, b) => b.pnlPct - a.pnlPct),
       recentTrades: getRecentPaperTrades(20)

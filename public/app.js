@@ -26,6 +26,15 @@ const watchCountEl = document.querySelector("#watchCount");
 const rejectCountEl = document.querySelector("#rejectCount");
 const paperPnlEl = document.querySelector("#paperPnl");
 const paperTradesEl = document.querySelector("#paperTrades");
+const paperControlStateEl = document.querySelector("#paperControlState");
+const paperEnabledEl = document.querySelector("#paperEnabled");
+const paperAccountSizeEl = document.querySelector("#paperAccountSize");
+const paperRiskPctEl = document.querySelector("#paperRiskPct");
+const paperMaxPositionEl = document.querySelector("#paperMaxPosition");
+const paperMaxOpenEl = document.querySelector("#paperMaxOpen");
+const paperMaxDailyEl = document.querySelector("#paperMaxDaily");
+const savePaperControlsEl = document.querySelector("#savePaperControls");
+const paperControlNoteEl = document.querySelector("#paperControlNote");
 const readinessStatusEl = document.querySelector("#readinessStatus");
 const readinessSymbolEl = document.querySelector("#readinessSymbol");
 const readinessTitleEl = document.querySelector("#readinessTitle");
@@ -55,6 +64,7 @@ let rankedOpportunities = [];
 let detailOpportunity = null;
 let selectedSymbol = null;
 let backtest = null;
+let paperControls = null;
 let lastRankedRefresh = 0;
 let lastDetailRefresh = 0;
 let renderedDetailKey = null;
@@ -246,6 +256,7 @@ function renderSignalGate() {
   watchCountEl.textContent = summary.Watch ?? 0;
   rejectCountEl.textContent = summary.Reject ?? 0;
   paperPnlEl.textContent = money(paper.stats?.realizedPnl ?? 0);
+  renderPaperControls(paper.controls ?? paperControls, paper.note);
 
   const openTrades = paper.openTrades ?? [];
   const recentClosed = (paper.recentTrades ?? []).filter((trade) => trade.status === "closed").slice(0, 4);
@@ -269,6 +280,23 @@ function renderSignalGate() {
             `
           )
           .join("");
+}
+
+function renderPaperControls(controls, note = null) {
+  if (!controls) return;
+  paperControls = controls;
+  paperControlStateEl.textContent = controls.enabled ? "Enabled" : "Off";
+  paperControlStateEl.className = controls.enabled ? "state-pill armed" : "state-pill blocked";
+  paperEnabledEl.checked = controls.enabled;
+  paperAccountSizeEl.value = controls.accountSize ?? 10000;
+  paperRiskPctEl.value = ((controls.riskPerTradePct ?? 0.005) * 100).toFixed(2);
+  paperMaxPositionEl.value = controls.maxPositionNotional ?? 1000;
+  paperMaxOpenEl.value = controls.maxOpenTrades ?? 3;
+  paperMaxDailyEl.value = controls.maxTradesPerDay ?? 5;
+  const tradesToday = controls.tradesOpenedToday ?? 0;
+  paperControlNoteEl.textContent =
+    note ??
+    `${tradesToday}/${controls.maxTradesPerDay ?? 5} trades opened today. Real-time data, catalyst, setup, ML, and risk gates still apply.`;
 }
 
 function renderPaperReadiness() {
@@ -566,6 +594,32 @@ scoreFilterEl.addEventListener("input", () => {
 priorityFilterEl.addEventListener("change", render);
 refreshListEl.addEventListener("click", refreshRankedList);
 refreshDetailEl.addEventListener("click", refreshDetail);
+savePaperControlsEl.addEventListener("click", async () => {
+  savePaperControlsEl.disabled = true;
+  savePaperControlsEl.textContent = "Saving";
+  const payload = {
+    enabled: paperEnabledEl.checked,
+    accountSize: Number(paperAccountSizeEl.value),
+    riskPerTradePct: Number(paperRiskPctEl.value) / 100,
+    maxPositionNotional: Number(paperMaxPositionEl.value),
+    maxOpenTrades: Number(paperMaxOpenEl.value),
+    maxTradesPerDay: Number(paperMaxDailyEl.value)
+  };
+  try {
+    const response = await fetch("/api/paper-controls", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    paperControls = await response.json();
+    renderPaperControls(paperControls, "Controls saved. The next research scan will use these limits.");
+  } catch {
+    paperControlNoteEl.textContent = "Could not save controls.";
+  } finally {
+    savePaperControlsEl.disabled = false;
+    savePaperControlsEl.textContent = "Save Controls";
+  }
+});
 runResearchScanEl.addEventListener("click", async () => {
   runResearchScanEl.disabled = true;
   runResearchScanEl.textContent = "Starting Scan";
@@ -630,6 +684,16 @@ async function refreshBacktest() {
   }
 }
 
+async function refreshPaperControls() {
+  try {
+    const response = await fetch("/api/paper-controls");
+    if (!response.ok) return;
+    renderPaperControls(await response.json());
+  } catch {
+    paperControlNoteEl.textContent = "Paper controls offline.";
+  }
+}
+
 async function refreshScanStatus() {
   try {
     const response = await fetch("/api/scan-status");
@@ -643,5 +707,6 @@ async function refreshScanStatus() {
 
 refreshBacktest();
 refreshScanStatus();
+refreshPaperControls();
 setInterval(refreshBacktest, 5000);
 setInterval(refreshScanStatus, 3000);

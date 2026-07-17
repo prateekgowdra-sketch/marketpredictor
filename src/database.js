@@ -244,6 +244,11 @@ const statements = {
       SUM(CASE WHEN status = 'closed' THEN pnl_dollars ELSE 0 END) AS realized_pnl
     FROM paper_trades
   `),
+  paperTradesOpenedSince: db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM paper_trades
+    WHERE opened_at >= ?
+  `),
   recentSignals: db.prepare(`
     SELECT * FROM signals
     ORDER BY ts DESC, id DESC
@@ -490,6 +495,11 @@ export function getPaperTradeStats() {
     averagePnlPct: row.average_pnl_pct ?? 0,
     realizedPnl: row.realized_pnl ?? 0
   };
+}
+
+export function getPaperTradesOpenedSince(ts) {
+  const row = statements.paperTradesOpenedSince.get(ts);
+  return row.count ?? 0;
 }
 
 export function getRecentSignals(limit = 50) {

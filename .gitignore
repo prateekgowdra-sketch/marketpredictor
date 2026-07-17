@@ -2,6 +2,7 @@ node_modules/
 .DS_Store
 .env
 data/*.jsonl
+data/*.json
 data/*.db
 data/*.sqlite
 data/*.sqlite-shm

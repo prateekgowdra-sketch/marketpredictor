@@ -11,6 +11,7 @@ import {
   getRecentResearchEvents,
   getRecentSignals
 } from "./database.js";
+import { getPaperControls, paperControlsEnv, savePaperControls } from "./paperControls.js";
 
 loadEnv();
 
@@ -202,14 +203,44 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (url.pathname === "/api/paper-controls") {
+    if (request.method === "GET") {
+      sendJson(response, getPaperControls());
+      return;
+    }
+
+    if (request.method === "POST") {
+      let body = "";
+      request.on("data", (chunk) => {
+        body += chunk;
+      });
+      request.on("end", () => {
+        try {
+          const payload = body ? JSON.parse(body) : {};
+          sendJson(response, savePaperControls(payload));
+        } catch (error) {
+          response.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+          response.end(JSON.stringify({ error: error.message }));
+        }
+      });
+      return;
+    }
+
+    response.writeHead(405, { Allow: "GET, POST" });
+    response.end("Method Not Allowed");
+    return;
+  }
+
   if (url.pathname === "/api/paper-loop-audit") {
     const trades = getRecentPaperTrades(50);
     const currentFormatTrades = trades.filter((trade) => trade.setup && trade.research && trade.dataQuality);
     const closest = latestSnapshot.paperReadiness?.closest ?? null;
+    const controls = getPaperControls();
     sendJson(response, {
       generatedAt: new Date().toISOString(),
       provider: latestSnapshot.provider,
       scanStatus,
+      controls,
       signalSummary: latestSnapshot.signalSummary,
       readiness: latestSnapshot.paperReadiness,
       paperStats: getPaperTradeStats(),
@@ -217,7 +248,9 @@ const server = http.createServer(async (request, response) => {
       legacyTradeCount: trades.length - currentFormatTrades.length,
       currentFormatTrades: currentFormatTrades.slice(0, 10),
       loopState:
-        latestSnapshot.paperReadiness?.ready
+        !controls.enabled
+          ? "disabled"
+          : latestSnapshot.paperReadiness?.ready
           ? "armed"
           : "blocked",
       primaryBlockers: closest?.blockers ?? ["Waiting for a research scan."],
@@ -271,7 +304,10 @@ function runMarketUpdate(reason = "manual") {
     lastError: null,
     reason
   };
-  scanProcess = fork(path.join(process.cwd(), "src/scanWorker.js"), [], { silent: true });
+  scanProcess = fork(path.join(process.cwd(), "src/scanWorker.js"), [], {
+    env: { ...process.env, ...paperControlsEnv() },
+    silent: true
+  });
 
   scanProcess.stdout?.on("data", (chunk) => {
     process.stdout.write(chunk);

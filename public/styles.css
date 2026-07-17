@@ -120,6 +120,18 @@ h1 {
   color: var(--text);
 }
 
+.view-section[hidden] {
+  display: none !important;
+}
+
+.nav button.active::after {
+  content: "active";
+  color: var(--cyan);
+  float: right;
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .control-panel {
   display: grid;
   gap: 18px;

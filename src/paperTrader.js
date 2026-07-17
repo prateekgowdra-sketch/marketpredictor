@@ -18,7 +18,11 @@ export class PaperTrader {
     this.maxOpenTrades = Number(process.env.PAPER_TRADE_MAX_OPEN ?? 5);
     this.maxTradesPerDay = Number(process.env.PAPER_TRADE_MAX_DAILY ?? 5);
     this.minSimulationScore = Number(process.env.PAPER_SIM_MIN_SCORE ?? 60);
-    this.maxSimulationMovePct = Number(process.env.PAPER_SIM_MAX_MOVE_PCT ?? 0.2);
+    this.minSimulationSetupQuality = Number(process.env.PAPER_SIM_MIN_SETUP_QUALITY ?? 72);
+    this.minSimulationRewardRisk = Number(process.env.PAPER_SIM_MIN_REWARD_RISK ?? 1.8);
+    this.minSimulationProbability = Number(process.env.PAPER_SIM_MIN_PROBABILITY ?? 0.64);
+    this.maxSimulationRiskScore = Number(process.env.PAPER_SIM_MAX_RISK_SCORE ?? 48);
+    this.maxSimulationMovePct = Number(process.env.PAPER_SIM_MAX_MOVE_PCT ?? 0.12);
   }
 
   syncFromDatabase() {
@@ -64,16 +68,25 @@ export class PaperTrader {
     const setupQuality = opportunity.dayTradeSetup?.quality ?? 0;
     const rewardRisk = opportunity.dayTradeSetup?.rewardRisk ?? opportunity.signalDecision?.rewardRisk ?? 0;
     const probabilityUp = opportunity.prediction?.probabilityUp ?? 0;
+    const expectedReturn = opportunity.prediction?.expectedReturn ?? 0;
     const riskScore = opportunity.prediction?.riskScore ?? 100;
     const hasCatalyst = opportunity.researchSummary?.hasRealCatalyst || (opportunity.researchSummary?.events?.length ?? 0) > 0;
+    const setupDirection = opportunity.dayTradeSetup?.direction ?? "Wait";
+    const allowedSetup =
+      setupDirection === "Long" &&
+      !["No Clean Day-Trade Setup", "VWAP Rejection", "Failed Breakout"].includes(opportunity.dayTradeSetup?.type);
     const simulation =
       this.allowSimulation &&
       opportunity.score >= this.minSimulationScore &&
-      setupQuality >= 60 &&
-      rewardRisk >= 1.15 &&
-      probabilityUp >= 0.56 &&
-      riskScore <= 62 &&
-      hasCatalyst;
+      setupQuality >= this.minSimulationSetupQuality &&
+      rewardRisk >= this.minSimulationRewardRisk &&
+      probabilityUp >= this.minSimulationProbability &&
+      expectedReturn > 0 &&
+      riskScore <= this.maxSimulationRiskScore &&
+      opportunity.technical?.aboveVwap === true &&
+      (opportunity.technical?.relativeVolume ?? 0) >= 1.5 &&
+      hasCatalyst &&
+      allowedSetup;
 
     return simulation ? "simulation" : null;
   }
@@ -175,6 +188,10 @@ export class PaperTrader {
         maxTradesPerDay: this.maxTradesPerDay,
         maxTicksHeld: this.maxTicksHeld,
         minSimulationScore: this.minSimulationScore,
+        minSimulationSetupQuality: this.minSimulationSetupQuality,
+        minSimulationRewardRisk: this.minSimulationRewardRisk,
+        minSimulationProbability: this.minSimulationProbability,
+        maxSimulationRiskScore: this.maxSimulationRiskScore,
         maxSimulationMovePct: this.maxSimulationMovePct,
         tradesOpenedToday: this.tradesOpenedToday()
       },

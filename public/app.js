@@ -1,4 +1,6 @@
 const opportunitiesEl = document.querySelector("#opportunities");
+const viewButtons = [...document.querySelectorAll("[data-view-target]")];
+const viewSections = [...document.querySelectorAll("[data-view]")];
 const detailEl = document.querySelector("#detail");
 const detailPriorityEl = document.querySelector("#detailPriority");
 const refreshDetailEl = document.querySelector("#refreshDetail");
@@ -97,9 +99,21 @@ let renderedDetailKey = null;
 let listHasNewData = false;
 let detailHasNewData = false;
 let scanStatus = null;
+let activeView = "radar";
 
 const RANKED_REFRESH_MS = 10000;
 const DETAIL_REFRESH_MS = 10000;
+
+function setActiveView(view) {
+  activeView = view;
+  for (const button of viewButtons) {
+    button.classList.toggle("active", button.dataset.viewTarget === view);
+  }
+  for (const section of viewSections) {
+    section.hidden = section.dataset.view !== view;
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 
 function money(value) {
   return new Intl.NumberFormat("en-US", {
@@ -437,7 +451,7 @@ function renderPaperControls(controls, note = null) {
   paperMaxDailyEl.value = controls.maxTradesPerDay ?? 5;
   const tradesToday = controls.tradesOpenedToday ?? 0;
   const modeNote = controls.allowSimulation
-    ? "Simulation entries are allowed, but they stay labeled as simulation and do not prove live profitability."
+    ? `Profit-first simulation is strict: score ${controls.minSimulationScore ?? 75}+, setup ${controls.minSimulationSetupQuality ?? 72}+, R/R ${ratio(controls.minSimulationRewardRisk ?? 1.8)}x+, probability ${pct(controls.minSimulationProbability ?? 0.64)}+, long-only.`
     : "Only strict real-data and real-catalyst entries are allowed.";
   paperControlNoteEl.textContent =
     note ??
@@ -843,6 +857,9 @@ scoreFilterEl.addEventListener("input", () => {
 });
 
 priorityFilterEl.addEventListener("change", render);
+for (const button of viewButtons) {
+  button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
+}
 refreshListEl.addEventListener("click", refreshRankedList);
 refreshDetailEl.addEventListener("click", refreshDetail);
 savePaperControlsEl.addEventListener("click", async () => {

@@ -13,8 +13,12 @@ const defaults = {
   maxOpenTrades: 3,
   maxTradesPerDay: 5,
   maxTicksHeld: 90,
-  minSimulationScore: 60,
-  maxSimulationMovePct: 0.2
+  minSimulationScore: 75,
+  minSimulationSetupQuality: 72,
+  minSimulationRewardRisk: 1.8,
+  minSimulationProbability: 0.64,
+  maxSimulationRiskScore: 48,
+  maxSimulationMovePct: 0.12
 };
 
 function toNumber(value, fallback, min, max) {
@@ -33,8 +37,27 @@ function normalizeControls(input = {}) {
     maxOpenTrades: Math.round(toNumber(input.maxOpenTrades, defaults.maxOpenTrades, 1, 50)),
     maxTradesPerDay: Math.round(toNumber(input.maxTradesPerDay, defaults.maxTradesPerDay, 1, 500)),
     maxTicksHeld: Math.round(toNumber(input.maxTicksHeld, defaults.maxTicksHeld, 1, 10000)),
-    minSimulationScore: toNumber(input.minSimulationScore, defaults.minSimulationScore, 0, 100),
-    maxSimulationMovePct: toNumber(input.maxSimulationMovePct, defaults.maxSimulationMovePct, 0.01, 1)
+    minSimulationScore: toNumber(input.minSimulationScore, defaults.minSimulationScore, defaults.minSimulationScore, 100),
+    minSimulationSetupQuality: toNumber(
+      input.minSimulationSetupQuality,
+      defaults.minSimulationSetupQuality,
+      defaults.minSimulationSetupQuality,
+      100
+    ),
+    minSimulationRewardRisk: toNumber(
+      input.minSimulationRewardRisk,
+      defaults.minSimulationRewardRisk,
+      defaults.minSimulationRewardRisk,
+      10
+    ),
+    minSimulationProbability: toNumber(
+      input.minSimulationProbability,
+      defaults.minSimulationProbability,
+      defaults.minSimulationProbability,
+      1
+    ),
+    maxSimulationRiskScore: toNumber(input.maxSimulationRiskScore, defaults.maxSimulationRiskScore, 0, defaults.maxSimulationRiskScore),
+    maxSimulationMovePct: toNumber(input.maxSimulationMovePct, defaults.maxSimulationMovePct, 0.01, defaults.maxSimulationMovePct)
   };
 }
 
@@ -69,6 +92,10 @@ export function paperControlsEnv(controls = getPaperControls()) {
     PAPER_TRADE_MAX_DAILY: String(controls.maxTradesPerDay),
     PAPER_TRADE_MAX_TICKS: String(controls.maxTicksHeld),
     PAPER_SIM_MIN_SCORE: String(controls.minSimulationScore),
+    PAPER_SIM_MIN_SETUP_QUALITY: String(controls.minSimulationSetupQuality),
+    PAPER_SIM_MIN_REWARD_RISK: String(controls.minSimulationRewardRisk),
+    PAPER_SIM_MIN_PROBABILITY: String(controls.minSimulationProbability),
+    PAPER_SIM_MAX_RISK_SCORE: String(controls.maxSimulationRiskScore),
     PAPER_SIM_MAX_MOVE_PCT: String(controls.maxSimulationMovePct)
   };
 }

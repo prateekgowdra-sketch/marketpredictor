@@ -16,10 +16,10 @@
         </div>
       </div>
       <nav class="nav">
-        <button class="active" type="button">Radar</button>
-        <button type="button">Research</button>
-        <button type="button">Signals</button>
-        <button type="button">Models</button>
+        <button class="active" type="button" data-view-target="radar">Radar</button>
+        <button type="button" data-view-target="lab">Lab</button>
+        <button type="button" data-view-target="review">Review</button>
+        <button type="button" data-view-target="data">Data</button>
       </nav>
       <section class="control-panel">
         <label>
@@ -73,7 +73,7 @@
         </div>
       </section>
 
-      <section class="data-health-panel">
+      <section class="data-health-panel view-section" data-view="data" hidden>
         <div class="section-heading">
           <h3>Data Source Health</h3>
           <span id="dataProvider">Checking</span>
@@ -99,7 +99,7 @@
         <p id="dataHealthNote" class="meta">Waiting for provider status.</p>
       </section>
 
-      <section class="signal-panel">
+      <section class="signal-panel view-section" data-view="radar">
         <div class="section-heading">
           <h3>Signal Gate</h3>
           <span id="signalUpdated">Waiting</span>
@@ -125,7 +125,7 @@
         <div id="paperTrades" class="paper-trades"></div>
       </section>
 
-      <section class="paper-control-panel">
+      <section class="paper-control-panel view-section" data-view="radar">
         <div class="section-heading">
           <h3>Paper Trading Controls</h3>
           <span id="paperControlState">Off</span>
@@ -164,7 +164,7 @@
         <p id="paperControlNote" class="meta">Paper trading is off until you enable it. Real-data and catalyst gates still apply.</p>
       </section>
 
-      <section class="strategy-report-panel">
+      <section class="strategy-report-panel view-section" data-view="lab" hidden>
         <div class="section-heading">
           <div>
             <h3>Controlled Trading Research Lab</h3>
@@ -266,7 +266,7 @@
         </div>
       </section>
 
-      <section class="readiness-panel">
+      <section class="readiness-panel view-section" data-view="radar">
         <div class="section-heading">
           <h3>Paper Trading Readiness</h3>
           <span id="readinessStatus">Waiting</span>
@@ -281,7 +281,7 @@
         </div>
       </section>
 
-      <section class="scan-panel">
+      <section class="scan-panel view-section" data-view="data" hidden>
         <div class="section-heading">
           <h3>Market Scan</h3>
           <span id="scanUpdated">Scanning</span>
@@ -303,7 +303,7 @@
         <div id="scanCandidates" class="scan-candidates"></div>
       </section>
 
-      <section class="workspace">
+      <section class="workspace view-section" data-view="radar">
         <div class="opportunity-list">
           <div class="section-heading">
             <h3>Ranked Opportunities</h3>
@@ -329,7 +329,7 @@
         </aside>
       </section>
 
-      <section class="learning-panel">
+      <section class="learning-panel view-section" data-view="review" hidden>
         <div class="section-heading">
           <h3>Learning Loop</h3>
           <span id="learningUpdated">Collecting</span>

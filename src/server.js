@@ -202,6 +202,36 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (url.pathname === "/api/paper-loop-audit") {
+    const trades = getRecentPaperTrades(50);
+    const currentFormatTrades = trades.filter((trade) => trade.setup && trade.research && trade.dataQuality);
+    const closest = latestSnapshot.paperReadiness?.closest ?? null;
+    sendJson(response, {
+      generatedAt: new Date().toISOString(),
+      provider: latestSnapshot.provider,
+      scanStatus,
+      signalSummary: latestSnapshot.signalSummary,
+      readiness: latestSnapshot.paperReadiness,
+      paperStats: getPaperTradeStats(),
+      currentFormatTradeCount: currentFormatTrades.length,
+      legacyTradeCount: trades.length - currentFormatTrades.length,
+      currentFormatTrades: currentFormatTrades.slice(0, 10),
+      loopState:
+        latestSnapshot.paperReadiness?.ready
+          ? "armed"
+          : "blocked",
+      primaryBlockers: closest?.blockers ?? ["Waiting for a research scan."],
+      rules: [
+        "Only paper trade when signal gate is Signal.",
+        "Require trusted real-time market data.",
+        "Require at least one real catalyst source.",
+        "Require clean intraday setup quality.",
+        "Require acceptable ML probability, risk score, and reward/risk."
+      ]
+    });
+    return;
+  }
+
   if (url.pathname === "/api/research-events") {
     sendJson(response, { events: getRecentResearchEvents(50) });
     return;

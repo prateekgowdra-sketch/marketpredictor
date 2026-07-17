@@ -46,13 +46,34 @@
           <h2 id="marketTone">Loading market state</h2>
         </div>
         <div class="topbar-actions">
+          <label class="search-box" aria-label="Search">
+            <input type="search" placeholder="Search tickers, setups, reports" />
+          </label>
           <button id="runResearchScan" class="primary-action" type="button">Run Research Scan</button>
           <div class="status">
             <span class="pulse"></span>
             <span id="lastUpdated">Connecting</span>
           </div>
+          <div class="profile-chip" aria-label="Current workspace">
+            <span>MP</span>
+            <div>
+              <strong>Research Lab</strong>
+              <small>Simulation desk</small>
+            </div>
+          </div>
         </div>
       </header>
+
+      <section class="view-carousel" aria-label="Dashboard views">
+        <button id="previousView" type="button" aria-label="Previous view">‹</button>
+        <div>
+          <span id="viewCounter">1 / 4</span>
+          <strong id="currentViewTitle">Radar</strong>
+          <p id="currentViewDescription">Live trade candidates, controls, and readiness checks.</p>
+        </div>
+        <div id="viewDots" class="view-dots" aria-hidden="true"></div>
+        <button id="nextView" type="button" aria-label="Next view">›</button>
+      </section>
 
       <section class="metrics" aria-label="Market summary">
         <div>

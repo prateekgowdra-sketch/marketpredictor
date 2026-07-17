@@ -1,6 +1,12 @@
 const opportunitiesEl = document.querySelector("#opportunities");
 const viewButtons = [...document.querySelectorAll("[data-view-target]")];
 const viewSections = [...document.querySelectorAll("[data-view]")];
+const previousViewEl = document.querySelector("#previousView");
+const nextViewEl = document.querySelector("#nextView");
+const viewCounterEl = document.querySelector("#viewCounter");
+const currentViewTitleEl = document.querySelector("#currentViewTitle");
+const currentViewDescriptionEl = document.querySelector("#currentViewDescription");
+const viewDotsEl = document.querySelector("#viewDots");
 const detailEl = document.querySelector("#detail");
 const detailPriorityEl = document.querySelector("#detailPriority");
 const refreshDetailEl = document.querySelector("#refreshDetail");
@@ -103,16 +109,54 @@ let activeView = "radar";
 
 const RANKED_REFRESH_MS = 10000;
 const DETAIL_REFRESH_MS = 10000;
+const views = [
+  {
+    id: "radar",
+    title: "Radar",
+    description: "Live trade candidates, controls, and readiness checks."
+  },
+  {
+    id: "lab",
+    title: "Research Lab",
+    description: "Performance curve, exported artifacts, and setup-level results."
+  },
+  {
+    id: "review",
+    title: "Review Desk",
+    description: "Trade grades, failure reasons, journal review, and learning loop."
+  },
+  {
+    id: "data",
+    title: "Data Health",
+    description: "Provider quality, market scan coverage, and fallback visibility."
+  }
+];
 
 function setActiveView(view) {
   activeView = view;
+  const index = Math.max(0, views.findIndex((item) => item.id === view));
+  const meta = views[index] ?? views[0];
   for (const button of viewButtons) {
     button.classList.toggle("active", button.dataset.viewTarget === view);
   }
   for (const section of viewSections) {
     section.hidden = section.dataset.view !== view;
   }
+  viewCounterEl.textContent = `${index + 1} / ${views.length}`;
+  currentViewTitleEl.textContent = meta.title;
+  currentViewDescriptionEl.textContent = meta.description;
+  previousViewEl.disabled = index === 0;
+  nextViewEl.disabled = index === views.length - 1;
+  viewDotsEl.innerHTML = views
+    .map((item) => `<span class="${item.id === view ? "active" : ""}"></span>`)
+    .join("");
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function moveView(direction) {
+  const index = Math.max(0, views.findIndex((item) => item.id === activeView));
+  const nextIndex = Math.min(views.length - 1, Math.max(0, index + direction));
+  setActiveView(views[nextIndex].id);
 }
 
 function money(value) {
@@ -860,6 +904,13 @@ priorityFilterEl.addEventListener("change", render);
 for (const button of viewButtons) {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
 }
+previousViewEl.addEventListener("click", () => moveView(-1));
+nextViewEl.addEventListener("click", () => moveView(1));
+window.addEventListener("keydown", (event) => {
+  if (event.target?.matches?.("input, select, textarea")) return;
+  if (event.key === "ArrowLeft") moveView(-1);
+  if (event.key === "ArrowRight") moveView(1);
+});
 refreshListEl.addEventListener("click", refreshRankedList);
 refreshDetailEl.addEventListener("click", refreshDetail);
 savePaperControlsEl.addEventListener("click", async () => {
@@ -987,6 +1038,7 @@ async function refreshScanStatus() {
   }
 }
 
+setActiveView(activeView);
 refreshBacktest();
 refreshScanStatus();
 refreshPaperControls();

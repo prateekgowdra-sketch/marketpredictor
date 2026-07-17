@@ -53,14 +53,21 @@ export function buildStrategyReport(limit = 1000) {
   const currentFormatTrades = trades.filter((trade) => trade.setup && trade.research && trade.dataQuality);
   const strictTrades = currentFormatTrades.filter((trade) => tradeMode(trade) === "strict");
   const simulationTrades = currentFormatTrades.filter((trade) => tradeMode(trade) === "simulation");
+  const simulationSummary = summarizeTrades(simulationTrades);
   const invalidatedTrades = currentFormatTrades.filter((trade) => trade.review?.invalidated === true);
+  const note =
+    simulationTrades.length === 0
+      ? "No current-format simulation trades yet. Enable simulation mode, run scans, and collect at least 100 trades before judging strategy quality."
+      : simulationSummary.closed === 0
+      ? `${simulationSummary.open} simulation trade${simulationSummary.open === 1 ? " is" : "s are"} open, but none have closed yet. Win rate, profit factor, drawdown, and realized P/L appear after trades close.`
+      : "Simulation results test workflow quality only. They are not real day-trading proof until strict real-time data is connected.";
 
   return {
     generatedAt: new Date().toISOString(),
     sampleSize: currentFormatTrades.length,
     legacyIgnored: trades.length - currentFormatTrades.length,
     strict: summarizeTrades(strictTrades),
-    simulation: summarizeTrades(simulationTrades),
+    simulation: simulationSummary,
     invalidatedCount: invalidatedTrades.length,
     bySetup: groupBySetup(currentFormatTrades),
     recentReviews: currentFormatTrades.slice(0, 12).map((trade) => ({
@@ -76,9 +83,6 @@ export function buildStrategyReport(limit = 1000) {
       exitReason: trade.exitReason,
       review: trade.review
     })),
-    note:
-      simulationTrades.length === 0
-        ? "No current-format simulation trades yet. Enable simulation mode, run scans, and collect at least 100 trades before judging strategy quality."
-        : "Simulation results test workflow quality only. They are not real day-trading proof until strict real-time data is connected."
+    note
   };
 }

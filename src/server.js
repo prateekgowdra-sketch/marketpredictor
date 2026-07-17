@@ -7,6 +7,7 @@ import { getBacktestSummary } from "./backtest.js";
 import { buildStrategyReport } from "./strategyReport.js";
 import {
   getPaperTradeStats,
+  getPaperTradesForReport,
   getRecentPaperTrades,
   getRecentPredictions,
   getRecentResearchEvents,
@@ -43,6 +44,84 @@ const contentTypes = {
 function sendJson(response, payload) {
   response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(payload));
+}
+
+function sendDownload(response, filename, contentType, body) {
+  response.writeHead(200, {
+    "Content-Type": contentType,
+    "Content-Disposition": `attachment; filename="${filename}"`
+  });
+  response.end(body);
+}
+
+function csvCell(value) {
+  if (value == null) return "";
+  const text = String(value);
+  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function flattenPaperTrade(trade) {
+  return {
+    id: trade.id,
+    symbol: trade.symbol,
+    status: trade.status,
+    mode: trade.review?.mode ?? (trade.dataQuality?.isRealTimeTrusted ? "strict" : "simulation"),
+    openedAt: trade.openedAt,
+    closedAt: trade.closedAt,
+    entryPrice: trade.entryPrice,
+    exitPrice: trade.exitPrice,
+    quantity: trade.quantity,
+    notional: trade.notional,
+    stop: trade.stop,
+    target: trade.target,
+    exitReason: trade.exitReason,
+    pnlPct: trade.pnlPct,
+    pnlDollars: trade.pnlDollars,
+    maxGainPct: trade.maxGainPct,
+    maxDrawdownPct: trade.maxDrawdownPct,
+    ticksHeld: trade.ticksHeld,
+    setup: trade.setup?.type,
+    catalyst: trade.research?.title ?? trade.research?.impact,
+    dataLabel: trade.dataQuality?.label,
+    simulationOnly: trade.review?.simulationOnly,
+    invalidated: trade.review?.invalidated,
+    entryReason: trade.review?.entryReason,
+    blockersAtEntry: trade.review?.blockersAtEntry?.join("; "),
+    confirmations: trade.review?.confirmations?.join("; ")
+  };
+}
+
+function paperTradeCsv(trades) {
+  const rows = trades.map(flattenPaperTrade);
+  const headers = [
+    "id",
+    "symbol",
+    "status",
+    "mode",
+    "openedAt",
+    "closedAt",
+    "entryPrice",
+    "exitPrice",
+    "quantity",
+    "notional",
+    "stop",
+    "target",
+    "exitReason",
+    "pnlPct",
+    "pnlDollars",
+    "maxGainPct",
+    "maxDrawdownPct",
+    "ticksHeld",
+    "setup",
+    "catalyst",
+    "dataLabel",
+    "simulationOnly",
+    "invalidated",
+    "entryReason",
+    "blockersAtEntry",
+    "confirmations"
+  ];
+  return [headers.join(","), ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(","))].join("\n");
 }
 
 function createBootSnapshot() {
@@ -201,6 +280,33 @@ const server = http.createServer(async (request, response) => {
       stats: getPaperTradeStats(),
       trades: getRecentPaperTrades(50)
     });
+    return;
+  }
+
+  if (url.pathname === "/api/paper-trades/export.json") {
+    const trades = getPaperTradesForReport(10000);
+    sendDownload(
+      response,
+      "paper-trades.json",
+      "application/json; charset=utf-8",
+      JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          storage: "data/market-predictor.sqlite",
+          stats: getPaperTradeStats(),
+          strategyReport: buildStrategyReport(10000),
+          trades
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+
+  if (url.pathname === "/api/paper-trades/export.csv") {
+    const trades = getPaperTradesForReport(10000);
+    sendDownload(response, "paper-trades.csv", "text/csv; charset=utf-8", paperTradeCsv(trades));
     return;
   }
 

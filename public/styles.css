@@ -990,6 +990,38 @@ select {
   font-size: 20px;
 }
 
+.report-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.report-actions a {
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 999px;
+  color: var(--cyan);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 7px 10px;
+  text-decoration: none;
+}
+
+.report-actions a:hover {
+  background: rgba(34, 211, 238, 0.12);
+}
+
+.report-storage-note {
+  margin-top: -4px;
+}
+
+.report-storage-note code {
+  color: var(--text);
+  font-size: 12px;
+}
+
 .outcome-stats {
   margin-top: 12px;
 }

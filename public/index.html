@@ -167,7 +167,11 @@
       <section class="strategy-report-panel">
         <div class="section-heading">
           <h3>Strategy Report</h3>
-          <span id="strategySampleSize">0 trades</span>
+          <div class="report-actions">
+            <a href="/api/paper-trades/export.csv" download>CSV</a>
+            <a href="/api/paper-trades/export.json" download>JSON</a>
+            <span id="strategySampleSize">0 trades</span>
+          </div>
         </div>
         <div class="strategy-grid">
           <div>
@@ -188,6 +192,7 @@
           </div>
         </div>
         <p id="strategyNote" class="meta">No current-format simulation trades yet.</p>
+        <p class="meta report-storage-note">Saved locally in <code>data/market-predictor.sqlite</code>. Use CSV for spreadsheets or JSON for full setup/review details.</p>
         <div class="strategy-columns">
           <section>
             <div class="section-heading">

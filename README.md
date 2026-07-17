@@ -75,6 +75,11 @@ The free stock plan has tight call limits, so the provider only tries a small re
 
 Paper trading is controlled from the dashboard and is saved to `data/paper-controls.json`. It defaults to off. The controls set account size, risk per trade, max position size, max open trades, and max trades per day. Even when enabled, the app still blocks trades unless trusted real-time data, a real catalyst, a clean setup, ML, risk, and reward/risk checks all pass.
 
+Paper trade history, realized P/L, setup details, and simulation review notes are saved in `data/market-predictor.sqlite`. The Strategy Report includes CSV and JSON export links:
+
+- `/api/paper-trades/export.csv` for spreadsheets.
+- `/api/paper-trades/export.json` for complete nested trade/review data.
+
 ## Catalyst Research
 
 The research engine can pull real catalyst context from Polygon/Massive news, SEC EDGAR filings, and optional Finnhub earnings calendar data:

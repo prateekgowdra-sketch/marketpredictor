@@ -17,6 +17,7 @@ import { buildFeatureVector } from "./features.js";
 import { PredictionEngine } from "./mlModel.js";
 import { PaperTrader } from "./paperTrader.js";
 import { evaluateSignal } from "./signalGate.js";
+import { buildPaperReadiness } from "./paperReadiness.js";
 import { profileForSymbol, UniverseScanner } from "./universeScanner.js";
 
 export class MarketEngine {
@@ -160,6 +161,7 @@ export class MarketEngine {
     }
 
     const paper = this.paperTrader.run(opportunities, tick);
+    const paperReadiness = buildPaperReadiness(opportunities);
 
     return {
       tick,
@@ -169,6 +171,7 @@ export class MarketEngine {
       summary: summarizeMarket(opportunities),
       scan: this.latestScan,
       signalSummary: summarizeSignalDecisions(opportunities),
+      paperReadiness,
       paper,
       opportunities
     };

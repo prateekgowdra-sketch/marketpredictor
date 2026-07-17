@@ -10,6 +10,7 @@ export const db = new DatabaseSync(path.join(dataDir, "market-predictor.sqlite")
 db.exec(`
   PRAGMA journal_mode = WAL;
   PRAGMA foreign_keys = ON;
+  PRAGMA busy_timeout = 250;
 
   CREATE TABLE IF NOT EXISTS tickers (
     symbol TEXT PRIMARY KEY,
@@ -118,6 +119,9 @@ db.exec(`
     ticks_held INTEGER DEFAULT 0,
     decision_json TEXT NOT NULL,
     prediction_json TEXT NOT NULL,
+    setup_json TEXT,
+    research_json TEXT,
+    data_quality_json TEXT,
     FOREIGN KEY(signal_id) REFERENCES signals(id) ON DELETE SET NULL
   );
 
@@ -146,6 +150,9 @@ addColumnIfMissing("outcomes", "label_json", "TEXT");
 addColumnIfMissing("research_events", "sentiment", "REAL DEFAULT 0");
 addColumnIfMissing("signals", "feature_json", "TEXT");
 addColumnIfMissing("signals", "prediction_json", "TEXT");
+addColumnIfMissing("paper_trades", "setup_json", "TEXT");
+addColumnIfMissing("paper_trades", "research_json", "TEXT");
+addColumnIfMissing("paper_trades", "data_quality_json", "TEXT");
 
 const statements = {
   upsertTicker: db.prepare(`
@@ -205,9 +212,9 @@ const statements = {
   insertPaperTrade: db.prepare(`
     INSERT INTO paper_trades (
       symbol, signal_id, opened_at, status, entry_price, quantity, notional,
-      stop, target, decision_json, prediction_json
+      stop, target, decision_json, prediction_json, setup_json, research_json, data_quality_json
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updatePaperTrade: db.prepare(`
     UPDATE paper_trades SET
@@ -406,7 +413,7 @@ export function saveModelRun(run) {
 }
 
 function parsePaperTrade(row) {
-  const { decision_json, prediction_json, ...trade } = row;
+  const { decision_json, prediction_json, setup_json, research_json, data_quality_json, ...trade } = row;
   return {
     id: trade.id,
     symbol: trade.symbol,
@@ -427,7 +434,10 @@ function parsePaperTrade(row) {
     maxDrawdownPct: trade.max_drawdown_pct,
     ticksHeld: trade.ticks_held,
     decision: JSON.parse(decision_json),
-    prediction: JSON.parse(prediction_json)
+    prediction: JSON.parse(prediction_json),
+    setup: setup_json ? JSON.parse(setup_json) : null,
+    research: research_json ? JSON.parse(research_json) : null,
+    dataQuality: data_quality_json ? JSON.parse(data_quality_json) : null
   };
 }
 
@@ -443,7 +453,10 @@ export function savePaperTrade(trade) {
     trade.stop,
     trade.target,
     JSON.stringify(trade.decision),
-    JSON.stringify(trade.prediction ?? null)
+    JSON.stringify(trade.prediction ?? null),
+    JSON.stringify(trade.setup ?? null),
+    JSON.stringify(trade.research ?? null),
+    JSON.stringify(trade.dataQuality ?? null)
   );
   return Number(result.lastInsertRowid);
 }

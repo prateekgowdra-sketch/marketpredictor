@@ -303,6 +303,80 @@ select {
   border-color: rgba(245, 158, 11, 0.45);
 }
 
+.readiness-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) 1.6fr;
+  gap: 12px;
+}
+
+.readiness-summary,
+.readiness-check {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.readiness-summary span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.readiness-summary strong {
+  display: block;
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.readiness-checklist {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.readiness-check {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 10px;
+  min-height: 74px;
+}
+
+.readiness-check > strong {
+  align-self: start;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 12px;
+  padding: 5px 0;
+  text-align: center;
+}
+
+.readiness-check.pass > strong {
+  background: var(--amber-2);
+}
+
+.readiness-check.fail > strong {
+  background: #78716c;
+}
+
+.readiness-check span,
+.readiness-check p {
+  display: block;
+}
+
+.readiness-check span {
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.readiness-check p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
 .scan-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -800,6 +874,43 @@ select {
   color: var(--amber-2);
 }
 
+.journal-section {
+  margin-top: 16px;
+}
+
+.paper-journal-list {
+  display: grid;
+  gap: 8px;
+}
+
+.journal-entry {
+  align-items: center;
+  background: var(--panel-3);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 0.8fr 1.2fr 0.8fr 0.8fr 0.9fr;
+  padding: 10px;
+}
+
+.journal-entry.open {
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.journal-entry span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.journal-entry strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
 .intel-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -851,12 +962,15 @@ select {
   .metrics,
   .data-health-grid,
   .signal-grid,
+  .readiness-layout,
+  .readiness-checklist,
   .setup-levels,
   .paper-trades,
   .scan-metrics,
   .scan-candidates,
   .learning-grid,
   .outcome-stats,
+  .journal-entry,
   .intel-grid {
     grid-template-columns: 1fr;
   }

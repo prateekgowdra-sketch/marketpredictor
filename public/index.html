@@ -118,6 +118,21 @@
         <div id="paperTrades" class="paper-trades"></div>
       </section>
 
+      <section class="readiness-panel">
+        <div class="section-heading">
+          <h3>Paper Trading Readiness</h3>
+          <span id="readinessStatus">Waiting</span>
+        </div>
+        <div class="readiness-layout">
+          <div class="readiness-summary">
+            <span id="readinessSymbol">No candidate yet</span>
+            <strong id="readinessTitle">Collecting checks</strong>
+            <p id="readinessNote" class="meta">Waiting for market data, catalysts, setup quality, ML, and risk checks.</p>
+          </div>
+          <div id="readinessChecklist" class="readiness-checklist"></div>
+        </div>
+      </section>
+
       <section class="scan-panel">
         <div class="section-heading">
           <h3>Market Scan</h3>
@@ -191,6 +206,13 @@
         </div>
         <p id="learningNote" class="meta">Outcome windows are still collecting.</p>
         <div id="outcomeStats" class="outcome-stats"></div>
+        <section class="journal-section">
+          <div class="section-heading">
+            <h3>Paper Trade Journal</h3>
+            <span id="paperJournalCount">0</span>
+          </div>
+          <div id="paperJournalList" class="paper-journal-list"></div>
+        </section>
         <div class="intel-grid">
           <section>
             <div class="section-heading">

@@ -15,6 +15,8 @@ import {
 loadEnv();
 
 const port = Number(process.env.PORT ?? 3001);
+const updateIntervalMs = Number(process.env.MARKET_UPDATE_INTERVAL_MS ?? 60000);
+const continuousResearch = process.env.ENABLE_CONTINUOUS_RESEARCH === "true";
 const publicDir = path.join(process.cwd(), "public");
 const engine = await MarketEngine.create();
 const clients = new Set();
@@ -136,7 +138,7 @@ const server = http.createServer(async (request, response) => {
   await serveStatic(request, response);
 });
 
-setInterval(async () => {
+async function runMarketUpdate() {
   if (updateInFlight) return;
   updateInFlight = true;
   try {
@@ -147,9 +149,13 @@ setInterval(async () => {
     console.error(`Market update skipped: ${error.message}`);
   } finally {
     updateInFlight = false;
+    setTimeout(runMarketUpdate, updateIntervalMs);
   }
-}, 1000);
+}
 
 server.listen(port, () => {
   console.log(`Market Predictor running at http://localhost:${port}`);
+  if (continuousResearch) {
+    setTimeout(runMarketUpdate, updateIntervalMs);
+  }
 });

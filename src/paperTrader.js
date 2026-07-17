@@ -55,7 +55,10 @@ export class PaperTrader {
       maxDrawdownPct: 0,
       ticksHeld: 0,
       decision: opportunity.signalDecision,
-      prediction: opportunity.prediction
+      prediction: opportunity.prediction,
+      setup: opportunity.dayTradeSetup,
+      research: opportunity.researchSummary,
+      dataQuality: opportunity.dataQuality
     };
     trade.id = savePaperTrade(trade);
     this.openTrades.set(trade.symbol, trade);

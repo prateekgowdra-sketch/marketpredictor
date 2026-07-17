@@ -24,6 +24,11 @@ const watchCountEl = document.querySelector("#watchCount");
 const rejectCountEl = document.querySelector("#rejectCount");
 const paperPnlEl = document.querySelector("#paperPnl");
 const paperTradesEl = document.querySelector("#paperTrades");
+const readinessStatusEl = document.querySelector("#readinessStatus");
+const readinessSymbolEl = document.querySelector("#readinessSymbol");
+const readinessTitleEl = document.querySelector("#readinessTitle");
+const readinessNoteEl = document.querySelector("#readinessNote");
+const readinessChecklistEl = document.querySelector("#readinessChecklist");
 const scanUpdatedEl = document.querySelector("#scanUpdated");
 const universeSizeEl = document.querySelector("#universeSize");
 const deepCandidateCountEl = document.querySelector("#deepCandidateCount");
@@ -40,6 +45,8 @@ const predictionCountEl = document.querySelector("#predictionCount");
 const predictionListEl = document.querySelector("#predictionList");
 const researchCountEl = document.querySelector("#researchCount");
 const researchListEl = document.querySelector("#researchList");
+const paperJournalCountEl = document.querySelector("#paperJournalCount");
+const paperJournalListEl = document.querySelector("#paperJournalList");
 
 let snapshot = null;
 let rankedOpportunities = [];
@@ -103,6 +110,10 @@ function setupClass(type) {
   if (type.includes("Opening") || type.includes("Gap")) return "setup-badge breakout";
   if (type.includes("Momentum")) return "setup-badge momentum";
   return "setup-badge caution";
+}
+
+function checkClass(passed) {
+  return passed ? "readiness-check pass" : "readiness-check fail";
 }
 
 function listRefreshSeconds() {
@@ -244,6 +255,44 @@ function renderSignalGate() {
             `
           )
           .join("");
+}
+
+function renderPaperReadiness() {
+  const readiness = snapshot.paperReadiness;
+  if (!readiness) return;
+  const closest = readiness.closest;
+  readinessStatusEl.textContent = readiness.ready
+    ? `${readiness.readyCount} ready`
+    : `${readiness.readyCount} ready - ${readiness.checkedCount} checked`;
+
+  if (!closest) {
+    readinessSymbolEl.textContent = "No candidate yet";
+    readinessTitleEl.textContent = "Waiting for checks";
+    readinessNoteEl.textContent = readiness.note;
+    readinessChecklistEl.innerHTML = "";
+    return;
+  }
+
+  readinessSymbolEl.textContent = `${closest.symbol} - ${closest.company ?? "Tracked ticker"}`;
+  readinessTitleEl.textContent = closest.ready
+    ? `${closest.setupType} is paper-trade ready`
+    : `${closest.passedChecks}/${closest.totalChecks} checks passed`;
+  readinessNoteEl.textContent = closest.ready
+    ? `${closest.catalystImpact} catalyst: ${closest.catalystTitle}`
+    : `Blocked by: ${closest.blockers.join(", ") || "waiting for a clean signal"}`;
+  readinessChecklistEl.innerHTML = closest.checks
+    .map(
+      (check) => `
+        <div class="${checkClass(check.passed)}">
+          <strong>${check.passed ? "Pass" : "Wait"}</strong>
+          <div>
+            <span>${check.label}</span>
+            <p>${check.detail}</p>
+          </div>
+        </div>
+      `
+    )
+    .join("");
 }
 
 function renderList() {
@@ -419,6 +468,7 @@ function renderLearning() {
       `
     )
     .join("");
+  renderPaperJournal(backtest.recentPaperTrades ?? []);
   predictionCountEl.textContent = backtest.recentPredictions?.length ?? 0;
   predictionListEl.innerHTML = (backtest.recentPredictions ?? [])
     .slice(0, 8)
@@ -445,11 +495,48 @@ function renderLearning() {
     .join("");
 }
 
+function renderPaperJournal(trades) {
+  paperJournalCountEl.textContent = trades.length;
+  paperJournalListEl.innerHTML =
+    trades.length === 0
+      ? `<div class="empty-state">No journal entries yet. A paper trade is only logged after a real-data, real-catalyst Signal opens.</div>`
+      : trades
+          .slice(0, 8)
+          .map(
+            (trade) => `
+              <div class="journal-entry ${trade.status}">
+                <div>
+                  <strong>${trade.symbol}</strong>
+                  <span>${trade.status}${trade.exitReason ? ` - ${trade.exitReason}` : ""}</span>
+                </div>
+                <div>
+                  <span>Setup</span>
+                  <strong>${trade.setup?.type ?? "Legacy trade"}</strong>
+                </div>
+                <div>
+                  <span>Catalyst</span>
+                  <strong>${trade.research?.impact ?? "Unknown"}</strong>
+                </div>
+                <div>
+                  <span>Data</span>
+                  <strong>${trade.dataQuality?.label ?? "Unknown"}</strong>
+                </div>
+                <div>
+                  <span>P/L</span>
+                  <strong>${signedPct(trade.pnlPct ?? 0)} / ${money(trade.pnlDollars ?? 0)}</strong>
+                </div>
+              </div>
+            `
+          )
+          .join("");
+}
+
 function render() {
   if (!snapshot) return;
   renderSummary();
   renderDataHealth();
   renderSignalGate();
+  renderPaperReadiness();
   renderScan();
   renderList();
   renderDetail();
@@ -492,6 +579,7 @@ events.onmessage = (event) => {
   renderSummary();
   renderDataHealth();
   renderSignalGate();
+  renderPaperReadiness();
   renderScan();
   renderDetail();
   renderLearning();

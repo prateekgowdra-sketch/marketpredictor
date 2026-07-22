@@ -185,6 +185,47 @@
         <p id="paperControlNote" class="meta">Paper trading is off until you enable it. Real-data and catalyst gates still apply.</p>
       </section>
 
+      <section class="morning-test-panel view-section" data-view="radar">
+        <div class="section-heading">
+          <div>
+            <h3>Morning Test Mode</h3>
+            <p class="section-subtitle">Scheduled paper/simulation scans for the market open. Scans often, trades rarely.</p>
+          </div>
+          <span id="morningTestState">Off</span>
+        </div>
+        <div class="morning-test-grid">
+          <label class="toggle-row">
+            <input id="morningTestEnabled" type="checkbox" />
+            <span>Enable morning tester</span>
+          </label>
+          <label>
+            Start
+            <input id="morningTestStart" type="time" />
+          </label>
+          <label>
+            End
+            <input id="morningTestEnd" type="time" />
+          </label>
+          <label>
+            Scan every
+            <input id="morningTestInterval" type="number" min="1" max="60" step="1" />
+          </label>
+          <label>
+            Max trades
+            <input id="morningTestMaxTrades" type="number" min="1" max="20" step="1" />
+          </label>
+          <label>
+            Max losses
+            <input id="morningTestMaxLosses" type="number" min="1" max="10" step="1" />
+          </label>
+          <label>
+            Max drawdown %
+            <input id="morningTestMaxDrawdown" type="number" min="0.5" max="20" step="0.5" />
+          </label>
+        </div>
+        <p id="morningTestNote" class="meta">Off. Enable it, save controls, and keep this as tester-only.</p>
+      </section>
+
       <section class="strategy-report-panel view-section" data-view="lab" hidden>
         <div class="section-heading">
           <div>

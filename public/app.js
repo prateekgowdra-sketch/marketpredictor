@@ -44,6 +44,15 @@ const paperMaxOpenEl = document.querySelector("#paperMaxOpen");
 const paperMaxDailyEl = document.querySelector("#paperMaxDaily");
 const savePaperControlsEl = document.querySelector("#savePaperControls");
 const paperControlNoteEl = document.querySelector("#paperControlNote");
+const morningTestStateEl = document.querySelector("#morningTestState");
+const morningTestEnabledEl = document.querySelector("#morningTestEnabled");
+const morningTestStartEl = document.querySelector("#morningTestStart");
+const morningTestEndEl = document.querySelector("#morningTestEnd");
+const morningTestIntervalEl = document.querySelector("#morningTestInterval");
+const morningTestMaxTradesEl = document.querySelector("#morningTestMaxTrades");
+const morningTestMaxLossesEl = document.querySelector("#morningTestMaxLosses");
+const morningTestMaxDrawdownEl = document.querySelector("#morningTestMaxDrawdown");
+const morningTestNoteEl = document.querySelector("#morningTestNote");
 const strategySampleSizeEl = document.querySelector("#strategySampleSize");
 const labArtifactsSavedEl = document.querySelector("#labArtifactsSaved");
 const labClosedTradesEl = document.querySelector("#labClosedTrades");
@@ -402,6 +411,7 @@ function renderScanStatus() {
   runResearchScanEl.disabled = isBusy;
   runResearchScanEl.textContent = isBusy ? "Scan Running" : "Run Research Scan";
   runResearchScanEl.classList.toggle("is-running", isBusy);
+  renderMorningTestStatus(scanStatus?.morningTest);
 }
 
 function renderDataHealth() {
@@ -493,6 +503,13 @@ function renderPaperControls(controls, note = null) {
   paperMaxPositionEl.value = controls.maxPositionNotional ?? 1000;
   paperMaxOpenEl.value = controls.maxOpenTrades ?? 3;
   paperMaxDailyEl.value = controls.maxTradesPerDay ?? 5;
+  morningTestEnabledEl.checked = controls.morningTestEnabled === true;
+  morningTestStartEl.value = controls.morningTestStart ?? "09:35";
+  morningTestEndEl.value = controls.morningTestEnd ?? "11:30";
+  morningTestIntervalEl.value = controls.morningTestIntervalMinutes ?? 5;
+  morningTestMaxTradesEl.value = controls.morningTestMaxTrades ?? 5;
+  morningTestMaxLossesEl.value = controls.morningTestMaxLosses ?? 2;
+  morningTestMaxDrawdownEl.value = ((controls.morningTestMaxDrawdownPct ?? 0.03) * 100).toFixed(1);
   const tradesToday = controls.tradesOpenedToday ?? 0;
   const modeNote = controls.allowSimulation
     ? `Profit-first simulation now requires trusted data, a real catalyst, score ${controls.minSimulationScore ?? 75}+, setup ${controls.minSimulationSetupQuality ?? 72}+, R/R ${ratio(controls.minSimulationRewardRisk ?? 1.8)}x+, probability ${pct(controls.minSimulationProbability ?? 0.64)}+, long-only.`
@@ -500,6 +517,20 @@ function renderPaperControls(controls, note = null) {
   paperControlNoteEl.textContent =
     note ??
     `${tradesToday}/${controls.maxTradesPerDay ?? 5} trades opened today. ${modeNote}`;
+}
+
+function renderMorningTestStatus(status) {
+  if (!status) {
+    morningTestStateEl.textContent = morningTestEnabledEl.checked ? "Armed" : "Off";
+    morningTestStateEl.className = morningTestEnabledEl.checked ? "state-pill armed" : "state-pill blocked";
+    return;
+  }
+  morningTestStateEl.textContent = status.active ? "Active" : status.enabled ? "Armed" : "Off";
+  morningTestStateEl.className = status.active || status.enabled ? "state-pill armed" : "state-pill blocked";
+  const config = status.config ?? {};
+  const next = status.nextScanAt ? ` Next scan: ${new Date(status.nextScanAt).toLocaleTimeString()}.` : "";
+  morningTestNoteEl.textContent =
+    `${status.message ?? "Waiting."} Window ${config.start ?? "09:35"}-${config.end ?? "11:30"} ET, every ${config.intervalMinutes ?? 5} min, max ${config.maxTrades ?? 5} trades, stop after ${config.maxLosses ?? 2} losses or ${pct(config.maxDrawdownPct ?? 0.03)} drawdown.${next}`;
 }
 
 function renderStrategyReport() {
@@ -923,7 +954,14 @@ savePaperControlsEl.addEventListener("click", async () => {
     riskPerTradePct: Number(paperRiskPctEl.value) / 100,
     maxPositionNotional: Number(paperMaxPositionEl.value),
     maxOpenTrades: Number(paperMaxOpenEl.value),
-    maxTradesPerDay: Number(paperMaxDailyEl.value)
+    maxTradesPerDay: Number(paperMaxDailyEl.value),
+    morningTestEnabled: morningTestEnabledEl.checked,
+    morningTestStart: morningTestStartEl.value,
+    morningTestEnd: morningTestEndEl.value,
+    morningTestIntervalMinutes: Number(morningTestIntervalEl.value),
+    morningTestMaxTrades: Number(morningTestMaxTradesEl.value),
+    morningTestMaxLosses: Number(morningTestMaxLossesEl.value),
+    morningTestMaxDrawdownPct: Number(morningTestMaxDrawdownEl.value) / 100
   };
   try {
     const response = await fetch("/api/paper-controls", {

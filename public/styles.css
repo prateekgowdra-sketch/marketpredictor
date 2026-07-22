@@ -441,6 +441,7 @@ select {
 .data-health-panel,
 .readiness-panel,
 .paper-control-panel,
+.morning-test-panel,
 .opportunity-list,
 .learning-panel {
   border: 1px solid rgba(25, 211, 255, 0.20);
@@ -458,6 +459,30 @@ select {
   display: grid;
   gap: 10px;
   grid-template-columns: 1.1fr repeat(5, minmax(110px, 1fr)) 130px;
+}
+
+.morning-test-grid {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1.25fr repeat(6, minmax(108px, 1fr));
+}
+
+.morning-test-grid label {
+  color: var(--muted);
+  display: grid;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.morning-test-grid input[type="number"],
+.morning-test-grid input[type="time"] {
+  background: rgba(6, 7, 14, 0.8);
+  border: 1px solid rgba(25, 211, 255, 0.12);
+  border-radius: 8px;
+  color: var(--text);
+  min-width: 0;
+  padding: 10px;
 }
 
 .control-strip label {
@@ -1641,6 +1666,7 @@ select {
   .workspace,
   .metrics,
   .control-strip,
+  .morning-test-grid,
   .data-health-grid,
   .signal-grid,
   .readiness-layout,

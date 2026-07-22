@@ -33,6 +33,14 @@ let scanStatus = {
   reason: scanOnStartup || continuousResearch ? "startup" : "manual",
   continuous: continuousResearch
 };
+let morningTestStatus = {
+  enabled: false,
+  active: false,
+  lastCheckedAt: null,
+  lastScanAt: null,
+  nextScanAt: null,
+  message: "Morning Test Mode is off."
+};
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -44,6 +52,63 @@ const contentTypes = {
 function sendJson(response, payload) {
   response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(payload));
+}
+
+function minutesFromTime(value) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function formatLocalIso(date) {
+  return new Date(date).toISOString();
+}
+
+function morningTestWindow(controls, now = new Date()) {
+  const day = now.getDay();
+  const weekday = day >= 1 && day <= 5;
+  const current = now.getHours() * 60 + now.getMinutes();
+  const start = minutesFromTime(controls.morningTestStart);
+  const end = minutesFromTime(controls.morningTestEnd);
+  return {
+    weekday,
+    active: controls.morningTestEnabled && weekday && current >= start && current <= end,
+    start,
+    end
+  };
+}
+
+function refreshMorningTestStatus(message = null) {
+  const controls = getPaperControls();
+  const now = new Date();
+  const windowState = morningTestWindow(controls, now);
+  const intervalMs = controls.morningTestIntervalMinutes * 60000;
+  const lastScanMs = morningTestStatus.lastScanAt ? new Date(morningTestStatus.lastScanAt).getTime() : null;
+  const nextMs = lastScanMs ? lastScanMs + intervalMs : now.getTime();
+  morningTestStatus = {
+    ...morningTestStatus,
+    enabled: controls.morningTestEnabled,
+    active: windowState.active,
+    lastCheckedAt: formatLocalIso(now),
+    nextScanAt: controls.morningTestEnabled ? formatLocalIso(nextMs) : null,
+    config: {
+      start: controls.morningTestStart,
+      end: controls.morningTestEnd,
+      intervalMinutes: controls.morningTestIntervalMinutes,
+      maxTrades: controls.morningTestMaxTrades,
+      maxLosses: controls.morningTestMaxLosses,
+      maxDrawdownPct: controls.morningTestMaxDrawdownPct
+    },
+    message:
+      message ??
+      (!controls.morningTestEnabled
+        ? "Morning Test Mode is off."
+        : !windowState.weekday
+          ? "Morning Test Mode waits for a weekday market session."
+          : windowState.active
+            ? "Morning Test Mode is armed for scheduled scans."
+            : `Morning Test Mode is outside the ${controls.morningTestStart}-${controls.morningTestEnd} ET window.`)
+  };
+  return { controls, intervalMs, nextMs, windowState };
 }
 
 function sendDownload(response, filename, contentType, body) {
@@ -226,7 +291,14 @@ const server = http.createServer(async (request, response) => {
   }
 
   if (url.pathname === "/api/scan-status") {
-    sendJson(response, scanStatus);
+    refreshMorningTestStatus();
+    sendJson(response, { ...scanStatus, morningTest: morningTestStatus });
+    return;
+  }
+
+  if (url.pathname === "/api/morning-test") {
+    refreshMorningTestStatus();
+    sendJson(response, morningTestStatus);
     return;
   }
 
@@ -468,8 +540,34 @@ function runMarketUpdate(reason = "manual") {
   return true;
 }
 
+function checkMorningTest() {
+  const { controls, intervalMs, nextMs, windowState } = refreshMorningTestStatus();
+  if (!controls.morningTestEnabled || !windowState.active) return;
+  if (scanProcess || ["queued", "running"].includes(scanStatus.state)) {
+    refreshMorningTestStatus("Morning Test Mode is waiting for the current scan to finish.");
+    return;
+  }
+  if (morningTestStatus.lastScanAt && Date.now() < nextMs) return;
+
+  scanStatus = {
+    ...scanStatus,
+    state: "queued",
+    lastError: null,
+    reason: "morning-test"
+  };
+  morningTestStatus = {
+    ...morningTestStatus,
+    lastScanAt: formatLocalIso(new Date()),
+    nextScanAt: formatLocalIso(Date.now() + intervalMs),
+    message: "Morning Test Mode queued a scheduled scan."
+  };
+  setTimeout(() => startMarketUpdate("morning-test"), 0);
+}
+
 server.listen(port, () => {
   console.log(`Market Predictor running at http://localhost:${port}`);
+  refreshMorningTestStatus();
+  setInterval(checkMorningTest, 30000);
   if (scanOnStartup || continuousResearch) {
     setTimeout(() => startMarketUpdate("startup"), 1000);
   }

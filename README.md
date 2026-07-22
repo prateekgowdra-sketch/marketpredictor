@@ -90,6 +90,8 @@ After the first five current-format simulation losses all came from `Gap-and-Go`
 
 The dashboard is split into views from the sidebar: Radar for active opportunities and controls, Lab for strategy performance, Review for trade diagnostics and learning, and Data for provider/scan health.
 
+Morning Test Mode is a paper/simulation tester, not live trading. It can auto-run research scans during a configured morning window, defaults to 9:35-11:30 ET every 5 minutes, and clamps the test to max trades, max losses, and max drawdown. It should be used as "scan often, trade rarely" automation; the paper trader still enforces trusted data, real catalyst, setup, ML, risk, and daily guardrails.
+
 ## Catalyst Research
 
 The research engine can pull real catalyst context from Polygon/Massive news, SEC EDGAR filings, and optional Finnhub earnings calendar data:
